@@ -11,7 +11,7 @@ steps:
     displayName: 'VsTest - testAssemblies'
     inputs:
       testAssemblyVer2: |
-        **\*test*.dll
+        **\DocumentFormat.OpenXml.*Test.dll
       runInParallel: true
       codeCoverageEnabled: true
       otherConsoleOptions: '/Platform:x64'
