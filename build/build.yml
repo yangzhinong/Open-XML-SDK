@@ -23,8 +23,8 @@ steps:
 
   - task: CopyFiles@2
     inputs:
-      SourceFolder: 'bin\$(BuildConfiguration)\tests'
-      Contents: '**'
+      SourceFolder: 'bin\$(BuildConfiguration)'
+      Contents: '*.Tests/**/*'
       TargetFolder: '$(Build.ArtifactStagingDirectory)/tests'
 
   - task: PublishBuildArtifacts@1
