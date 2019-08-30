@@ -8,18 +8,17 @@ steps:
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
 
-  # - task: VSTest@2
-  #   displayName: 'VsTest - testAssemblies'
-  #   inputs:
-  #     testAssemblyVer2: |
-  #       **\$(BuildConfiguration)\**\*test*.dll
-  #       !**\obj\**
-  #     runInParallel: true
-  #     codeCoverageEnabled: true
-  #     otherConsoleOptions: '/Platform:x64'
-  #     platform: '$(BuildPlatform)'
-  #     configuration: '$(BuildConfiguration)'
-  #     diagnosticsEnabled: True
+  - task: VSTest@2
+    displayName: 'VsTest - testAssemblies'
+    inputs:
+      testAssemblyVer2: |
+        bin\$(BuildConfiguration)\**\*test*.dll
+      runInParallel: true
+      codeCoverageEnabled: true
+      otherConsoleOptions: '/Platform:x64'
+      platform: '$(BuildPlatform)'
+      configuration: '$(BuildConfiguration)'
+      diagnosticsEnabled: True
 
   - task: VSBuild@1
     displayName: 'Pack SDK'
