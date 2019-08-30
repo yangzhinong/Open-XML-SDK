@@ -35,7 +35,7 @@ stages:
         - template: sign.yml
       dependsOn: Build
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-- stage: Deploy NuGet
+- stage: Deploy
   jobs:
   - deployment: MyGet
     environment: MyGet
