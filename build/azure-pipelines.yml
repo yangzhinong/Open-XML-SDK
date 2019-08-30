@@ -2,7 +2,7 @@ variables:
   SdkSolution: 'Open-XML-SDK.sln'
   BuildPlatform: 'Any CPU'
   BuildConfiguration: 'Release'
-  ProjectLoadStyle: 'DevCore21'
+  ProjectLoadStyle: 'All'
 
 jobs:
   - job: Build
