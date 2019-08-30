@@ -27,14 +27,14 @@ stages:
       steps:
         - template: build.yml
 
-    - job: Sign
-      displayName: Sign assemblies and package
-      pool:
-        name: Hosted VS2017
-      steps:
-        - template: sign.yml
-      dependsOn: Build
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    # - job: Sign
+    #   displayName: Sign assemblies and package
+    #   pool:
+    #     name: Hosted VS2017
+    #   steps:
+    #     - template: sign.yml
+    #   dependsOn: Build
+    #   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 - stage: Deploy
   jobs:
   - deployment: MyGet
@@ -54,4 +54,4 @@ stages:
     dependsOn: MyGet
     condition: succeeded()
   dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  condition: succeeded() #and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))

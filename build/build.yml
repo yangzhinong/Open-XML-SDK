@@ -1,12 +1,12 @@
 steps:
     
-  - task: VSBuild@1
-    displayName: 'Build SDK'
-    inputs:
-      solution: '$(SdkSolution)'
-      msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
-      platform: '$(BuildPlatform)'
-      configuration: '$(BuildConfiguration)'
+  # - task: VSBuild@1
+  #   displayName: 'Build SDK'
+  #   inputs:
+  #     solution: '$(SdkSolution)'
+  #     msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
+  #     platform: '$(BuildPlatform)'
+  #     configuration: '$(BuildConfiguration)'
 
   # - task: VSTest@2
   #   displayName: 'VsTest - testAssemblies'
@@ -20,12 +20,12 @@ steps:
   #     configuration: '$(BuildConfiguration)'
   #     diagnosticsEnabled: True
 
-  - task: VSBuild@1
-    displayName: 'Pack SDK'
-    inputs:
-      msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle) /p:PackageOutputPath=$(Build.ArtifactStagingDirectory)'
-      platform: '$(BuildPlatform)'
-      configuration: '$(BuildConfiguration)'
+  # - task: VSBuild@1
+  #   displayName: 'Pack SDK'
+  #   inputs:
+  #     msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle) /p:PackageOutputPath=$(Build.ArtifactStagingDirectory)'
+  #     platform: '$(BuildPlatform)'
+  #     configuration: '$(BuildConfiguration)'
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Unsigned'
