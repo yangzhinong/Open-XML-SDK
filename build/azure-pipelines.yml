@@ -32,4 +32,4 @@ jobs:
     steps:
       - template: sign.yml
     dependsOn: Build
-    condition: and(succeeded(), neq(variables['Build.Reason'], 'PullRequest'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
