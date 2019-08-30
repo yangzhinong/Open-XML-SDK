@@ -4,6 +4,15 @@ variables:
   BuildConfiguration: 'Release'
   ProjectLoadStyle: 'All'
 
+trigger:
+- master
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - master
+
 jobs:
   - job: Build
     displayName: Build SDK
@@ -23,4 +32,4 @@ jobs:
     steps:
       - template: sign.yml
     dependsOn: Build
-    condition: succeeded()
+    condition: and(succeeded(), neq(variables['Build.Reason'], 'PullRequest'))
