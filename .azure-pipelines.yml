@@ -112,29 +112,29 @@ jobs:
           replaceExistingArchive: true 
           verbose: true
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
-      displayName: 'OpenXML SDK Nuget Pkg ESRP CodeSigning'
-      inputs:
-        ConnectedServiceName: 'Open-XML-SDK-ESRP'
-        FolderPath: '$(Build.ArtifactStagingDirectory)'
-        Pattern: '*.nupkg'
-        signConfigType: inlineSignParams
-        inlineOperation: |
-          [
-              {
-                  "keyCode": "CP-401405",
-                  "operationSetCode": "NuGetSign",
-                  "parameters": [ ],
-                  "toolName": "sign",
-                  "toolVersion": "1.0"
-              },
-              {
-                  "keyCode": "CP-401405",
-                  "operationSetCode": "NuGetVerify",
-                  "parameters": [ ],
-                  "toolName": "sign",
-                  "toolVersion": "1.0"
-              }
-          ]
+        displayName: 'OpenXML SDK Nuget Pkg ESRP CodeSigning'
+        inputs:
+          ConnectedServiceName: 'Open-XML-SDK-ESRP'
+          FolderPath: '$(Build.ArtifactStagingDirectory)'
+          Pattern: '*.nupkg'
+          signConfigType: inlineSignParams
+          inlineOperation: |
+            [
+                {
+                    "keyCode": "CP-401405",
+                    "operationSetCode": "NuGetSign",
+                    "parameters": [ ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                },
+                {
+                    "keyCode": "CP-401405",
+                    "operationSetCode": "NuGetVerify",
+                    "parameters": [ ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                }
+            ]
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publish Signed'
