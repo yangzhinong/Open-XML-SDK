@@ -18,7 +18,7 @@ steps:
     displayName: 'OpenXML SDK Assembly ESRP CodeSigning'
     inputs:
       ConnectedServiceName: 'Open-XML-SDK-ESRP'
-      FolderPath: '$(Build.DefaultWorkingDirectory)\$(Version)'
+      FolderPath: '$(System.DefaultWorkingDirectory)\$(Version)'
       Pattern: '**\DocumentFormat.OpenXml.dll'
       UseMinimatch: true
       signConfigType: inlineSignParams
@@ -55,7 +55,7 @@ steps:
         ]
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: '$(System.DefaultWorkingDirectory)/$(Version)' 
+      rootFolderOrFile: '$(Build.DefaultWorkingDirectory)/$(Version)' 
       includeRootFolder: false
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/DocumentFormat.OpenXml.$(Version).nupkg' 
