@@ -55,7 +55,7 @@ steps:
         ]
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: '$(Build.DefaultWorkingDirectory)/$(Version)' 
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)/$(Version)' 
       includeRootFolder: false
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/DocumentFormat.OpenXml.$(Version).nupkg' 
