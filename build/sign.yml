@@ -12,6 +12,7 @@ steps:
         $version=gci DocumentFormat.OpenXml.*.nupkg | % { $_ -match 'DocumentFormat.OpenXml.(.*).nupkg' | Out-Null; $matches[1] }
         Write-Host ##vso[task.setvariable variable=Version]$version
         Write-Host Setting version to $version
+      workingDirectory: '$(System.DefaultWorkingDirectory)/unsigned'
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: '$(System.DefaultWorkingDirectory)/unsigned/DocumentFormat.OpenXml.$(Version).nupkg'
