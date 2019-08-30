@@ -18,7 +18,7 @@ steps:
     displayName: 'OpenXML SDK Assembly ESRP CodeSigning'
     inputs:
       ConnectedServiceName: 'Open-XML-SDK-ESRP'
-      FolderPath: '$(build.artifactstagingdirectory)\working-$(Version)'
+      FolderPath: '$(Build.DefaultWorkingDirectory)\working-$(Version)'
       Pattern: '**\DocumentFormat.OpenXml.dll'
       UseMinimatch: true
       signConfigType: inlineSignParams
