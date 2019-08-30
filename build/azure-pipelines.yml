@@ -56,4 +56,4 @@ stages:
           steps:
             - template: deploy-nuget.yml
   dependsOn: MyGet
-   condition: succeeded()
+  condition: succeeded()
