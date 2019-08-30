@@ -8,28 +8,27 @@ steps:
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
 
-  # - task: VSTest@2
-  #   displayName: 'VsTest - testAssemblies'
-  #   inputs:
-  #     testAssemblyVer2: |
-  #       **\$(BuildConfiguration)\**\*test*.dll
-  #       !**\obj\**
-  #     runInParallel: true
-  #     codeCoverageEnabled: true
-  #     otherConsoleOptions: '/Platform:x64'
-  #     platform: '$(BuildPlatform)'
-  #     configuration: '$(BuildConfiguration)'
-  #     diagnosticsEnabled: True
-
   - task: VSBuild@1
     displayName: 'Pack SDK'
     inputs:
-      msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle) /p:PackageOutputPath=$(Build.ArtifactStagingDirectory)'
+      msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle) /p:PackageOutputPath=$(Build.ArtifactStagingDirectory)/unsigned'
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Unsigned'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/unsigned'
       artifactName: 'unsigned'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'bin\$(BuildConfiguration)\tests'
+      Contents: '**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/tests'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Tests'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/tests'
+      artifactName: 'tests'
