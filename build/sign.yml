@@ -7,7 +7,7 @@ steps:
       downloadPath: $(System.DefaultWorkingDirectory)
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: '$(System.DefaultWorkingDirectory)/unsigned/DocumentFormat.OpenXml.nupkg'
+      archiveFilePatterns: '$(System.DefaultWorkingDirectory)/unsigned/DocumentFormat.OpenXml.*.nupkg'
       destinationFolder: '$(System.DefaultWorkingDirectory)/working'
   - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
     displayName: 'OpenXML SDK Assembly ESRP CodeSigning'

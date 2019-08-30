@@ -1,5 +1,14 @@
+variables:
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
 steps:
 
+  - task: CacheBeta@0
+    inputs:
+      key: nuget | packages.lock.json
+      path: $(NUGET_PACKAGES)
+    displayName: Cache NuGet packages
+    
   - task: VSBuild@1
     displayName: 'Build SDK'
     inputs:
