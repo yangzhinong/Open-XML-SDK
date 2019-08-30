@@ -35,7 +35,7 @@ stages:
     #     - template: sign.yml
     #   dependsOn: Build
     #   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-- stage: Deploy
+- stage: MyGet
   jobs:
   - deployment: MyGet
     environment: ooxmlsdk-myget
@@ -44,6 +44,9 @@ stages:
         deploy:
           steps:
             - template: deploy-myget.yml
+    dependsOn: Build
+    condition: succeeded() #and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+- stage: NuGet
   - deployment: NuGet
     environment: ooxmlsdk-nuget
     strategy:
@@ -51,7 +54,5 @@ stages:
         deploy:
           steps:
             - template: deploy-nuget.yml
-    dependsOn: MyGet
-    condition: succeeded()
-  dependsOn: Build
-  condition: succeeded() #and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  dependsOn: MyGet
+   condition: succeeded()
