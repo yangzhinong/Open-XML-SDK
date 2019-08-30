@@ -19,7 +19,7 @@ jobs:
       displayName: 'Build SDK'
       inputs:
         solution: '$(SdkSolution)'
-        msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
+        msbuildArgs: '/m /t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
         platform: '$(BuildPlatform)'
         configuration: '$(BuildConfiguration)'
 
