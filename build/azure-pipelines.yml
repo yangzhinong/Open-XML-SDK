@@ -43,14 +43,14 @@ stages:
       runOnce:
         deploy:
           steps:
-            template: deploy-myget.yml
+            - template: deploy-myget.yml
   - deployment: NuGet
     environment: NuGet
     strategy:
       runOnce:
         deploy:
           steps:
-            template: deploy-nuget.yml
+            - template: deploy-nuget.yml
     dependsOn: MyGet
     condition: succeeded()
   dependsOn: Build
