@@ -16,24 +16,11 @@ jobs:
     steps:
       - template: build.yml
 
-  - job: Test
-    displayName: Test SDK
-    pool:
-      name: Hosted VS2017
-      demands:
-      - msbuild
-      - visualstudio
-      - vstest
-    steps:
-      - template: test.yml
-    dependsOn: Build
-    condition: succeeded()
-
   - job: Sign
     displayName: Sign assemblies and package
     pool:
       name: Hosted VS2017
     steps:
       - template: sign.yml
-    dependsOn: Test
+    dependsOn: Build
     condition: succeeded()
