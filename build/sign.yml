@@ -10,7 +10,8 @@ steps:
       targetType: 'inline'
       script: |
         $version=gci DocumentFormat.OpenXml.*.nupkg | % { $_ -match 'DocumentFormat.OpenXml.(.*).nupkg' | Out-Null; $matches[1] }
-        ##vso[task.setvariable variable=Version]$version
+        Write-Host ##vso[task.setvariable variable=Version]$version
+        Write-Host Setting version to $version
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: '$(System.DefaultWorkingDirectory)/unsigned/DocumentFormat.OpenXml.$(Version).nupkg'
