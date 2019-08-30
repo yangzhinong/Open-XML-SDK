@@ -44,8 +44,8 @@ stages:
         deploy:
           steps:
             - template: deploy-myget.yml
-    dependsOn: Build
-    condition: succeeded() #and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  dependsOn: Build
+  condition: succeeded() #and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
 - stage: NuGet
   jobs:
   - deployment: NuGet
