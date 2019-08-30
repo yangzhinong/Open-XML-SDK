@@ -8,12 +8,6 @@ steps:
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
 
-  - task: CacheBeta@0
-    inputs:
-      key: nuget | packages.lock.json
-      path: $(NUGET_PACKAGES)
-    displayName: Cache NuGet packages
-
   # - task: VSTest@2
   #   displayName: 'VsTest - testAssemblies'
   #   inputs:

@@ -3,7 +3,6 @@ variables:
   BuildPlatform: 'Any CPU'
   BuildConfiguration: 'Release'
   ProjectLoadStyle: 'DevCore21'
-  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
 
 jobs:
   - job: Build
