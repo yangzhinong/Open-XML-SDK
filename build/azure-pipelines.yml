@@ -3,7 +3,6 @@ variables:
   BuildPlatform: 'Any CPU'
   BuildConfiguration: 'Release'
   ProjectLoadStyle: 'DevCore21'
-  Version: 'unknown'
 
 jobs:
   - job: Build

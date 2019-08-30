@@ -7,8 +7,8 @@ steps:
       downloadPath: $(System.DefaultWorkingDirectory)
   - powershell: |
       $version=gci DocumentFormat.OpenXml.*.nupkg | % { $_ -match 'DocumentFormat.OpenXml.(.*).nupkg' | Out-Null; $matches[1] }
-      Write-Host ##vso[task.setvariable variable=Version]$version
-      Write-Host Setting version to $version
+      Write-Host "##vso[task.setvariable variable=Version]$version"
+      Write-Host "Setting version to $version"
     workingDirectory: '$(System.DefaultWorkingDirectory)/unsigned'
   - task: ExtractFiles@1
     inputs:
