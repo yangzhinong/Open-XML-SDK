@@ -1,6 +1,3 @@
-variables:
-  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
-
 steps:
 
   - task: CacheBeta@0
