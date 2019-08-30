@@ -4,7 +4,7 @@ steps:
     displayName: 'Build SDK'
     inputs:
       solution: '$(SdkSolution)'
-      msbuildArgs: '/m /t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
+      msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
 
