@@ -1,134 +1,143 @@
-pool:
-  name: Hosted VS2017
-  demands:
-  - msbuild
-  - visualstudio
-  - vstest
-
 variables:
   SdkSolution: 'Open-XML-SDK.sln'
   BuildPlatform: 'Any CPU'
   BuildConfiguration: 'Release'
   ProjectLoadStyle: 'DevCore21'
 
-steps:
-- task: VSBuild@1
-  displayName: 'Build SDK'
-  inputs:
-    solution: '$(SdkSolution)'
-    msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
+jobs:
+  - job: Build
+    displayName: Build SDK
+    pool:
+      name: Hosted VS2017
+      demands:
+      - msbuild
+      - visualstudio
+      - vstest
+    steps:
 
-- task: VSTest@2
-  displayName: 'VsTest - testAssemblies'
-  inputs:
-    testAssemblyVer2: |
-     **\$(BuildConfiguration)\**\*test*.dll
-     !**\obj\**
-    runInParallel: true
-    codeCoverageEnabled: true
-    otherConsoleOptions: '/Platform:x64'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-    diagnosticsEnabled: True
+    - task: VSBuild@1
+      displayName: 'Build SDK'
+      inputs:
+        solution: '$(SdkSolution)'
+        msbuildArgs: '/t:restore;build /p:ProjectLoadStyle=$(ProjectLoadStyle)'
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(build.artifactstagingdirectory)\signed'
-  inputs:
-    SourceFolder: 'bin\Release\DocumentFormat.OpenXml\'
-    Contents: '**\DocumentFormat.OpenXml.dll'
-    TargetFolder: '$(build.artifactstagingdirectory)\signed'
+    - task: VSTest@2
+      displayName: 'VsTest - testAssemblies'
+      inputs:
+        testAssemblyVer2: |
+          **\$(BuildConfiguration)\**\*test*.dll
+          !**\obj\**
+        runInParallel: true
+        codeCoverageEnabled: true
+        otherConsoleOptions: '/Platform:x64'
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
+        diagnosticsEnabled: True
 
-- task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
-  displayName: 'OpenXML SDK Assembly ESRP CodeSigning'
-  inputs:
-    ConnectedServiceName: 'Open-XML-SDK-ESRP'
-    FolderPath: '$(build.artifactstagingdirectory)\signed'
-    Pattern: '**\DocumentFormat.OpenXml.dll'
-    UseMinimatch: true
-    signConfigType: inlineSignParams
-    inlineOperation: |
-     [
-       {
-         "keyCode": "CP-230012",
-         "operationSetCode": "SigntoolSign",
-         "parameters": [
-           {
-             "parameterName": "OpusName",
-             "parameterValue": "Microsoft"
-           },
-           {
-             "parameterName": "OpusInfo",
-             "parameterValue": "http://www.microsoft.com"
-           },
-           {
-             "parameterName": "PageHash",
-             "parameterValue": "/NPH"
-           },
-           {
-             "parameterName": "FileDigest",
-             "parameterValue": "/fd sha256"
-           },
-           {
-             "parameterName": "TimeStamp",
-             "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-           }
-         ],
-         "toolName": "signtool.exe",
-         "toolVersion": "6.2.9304.0"
-       }
-     ]
-     
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(build.artifactstagingdirectory)\signed'
+      inputs:
+        SourceFolder: 'bin\Release\DocumentFormat.OpenXml\'
+        Contents: '**\DocumentFormat.OpenXml.dll'
+        TargetFolder: '$(build.artifactstagingdirectory)\signed'
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to: obj\DocumentFormat.OpenXml\Release'
-  inputs:
-    SourceFolder: '$(build.artifactstagingdirectory)\signed'
-    Contents: '**\DocumentFormat.OpenXml.dll'
-    TargetFolder: 'obj\DocumentFormat.OpenXml\Release'
-    OverWrite: true
+    - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+      displayName: 'OpenXML SDK Assembly ESRP CodeSigning'
+      inputs:
+        ConnectedServiceName: 'Open-XML-SDK-ESRP'
+        FolderPath: '$(build.artifactstagingdirectory)\signed'
+        Pattern: '**\DocumentFormat.OpenXml.dll'
+        UseMinimatch: true
+        signConfigType: inlineSignParams
+        inlineOperation: |
+        [
+          {
+            "keyCode": "CP-230012",
+            "operationSetCode": "SigntoolSign",
+            "parameters": [
+              {
+                "parameterName": "OpusName",
+                "parameterValue": "Microsoft"
+              },
+              {
+                "parameterName": "OpusInfo",
+                "parameterValue": "http://www.microsoft.com"
+              },
+              {
+                "parameterName": "PageHash",
+                "parameterValue": "/NPH"
+              },
+              {
+                "parameterName": "FileDigest",
+                "parameterValue": "/fd sha256"
+              },
+              {
+                "parameterName": "TimeStamp",
+                "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+              }
+            ],
+            "toolName": "signtool.exe",
+            "toolVersion": "6.2.9304.0"
+          }
+        ]
 
-- task: VSBuild@1
-  displayName: 'Pack SDK'
-  inputs:
-    msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle)'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: obj\DocumentFormat.OpenXml\Release'
+      inputs:
+        SourceFolder: '$(build.artifactstagingdirectory)\signed'
+        Contents: '**\DocumentFormat.OpenXml.dll'
+        TargetFolder: 'obj\DocumentFormat.OpenXml\Release'
+        OverWrite: true
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
-  inputs:
-    SourceFolder: '$(system.defaultworkingdirectory)'
-    Contents: '**\bin\$(BuildConfiguration)\**\*.nupkg'
-    TargetFolder: '$(build.artifactstagingdirectory)'
+    - task: VSBuild@1
+      displayName: 'Pack SDK'
+      inputs:
+        msbuildArgs: '/t:pack /p:ProjectLoadStyle=$(ProjectLoadStyle)'
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
 
-- task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
-  displayName: 'OpenXML SDK Nuget Pkg ESRP CodeSigning'
-  inputs:
-    ConnectedServiceName: 'Open-XML-SDK-ESRP'
-    FolderPath: '$(build.artifactstagingdirectory)'
-    Pattern: '*.nupkg'
-    signConfigType: inlineSignParams
-    inlineOperation: |
-     [
-         {
-             "keyCode": "CP-401405",
-             "operationSetCode": "NuGetSign",
-             "parameters": [ ],
-             "toolName": "sign",
-             "toolVersion": "1.0"
-         },
-         {
-             "keyCode": "CP-401405",
-             "operationSetCode": "NuGetVerify",
-             "parameters": [ ],
-             "toolName": "sign",
-             "toolVersion": "1.0"
-         }
-     ]
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+      inputs:
+        SourceFolder: '$(system.defaultworkingdirectory)'
+        Contents: '**\bin\$(BuildConfiguration)\**\*.nupkg'
+        TargetFolder: '$(build.artifactstagingdirectory)'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
+    - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+      displayName: 'OpenXML SDK Nuget Pkg ESRP CodeSigning'
+      inputs:
+        ConnectedServiceName: 'Open-XML-SDK-ESRP'
+        FolderPath: '$(build.artifactstagingdirectory)'
+        Pattern: '*.nupkg'
+        signConfigType: inlineSignParams
+        inlineOperation: |
+        [
+            {
+                "keyCode": "CP-401405",
+                "operationSetCode": "NuGetSign",
+                "parameters": [ ],
+                "toolName": "sign",
+                "toolVersion": "1.0"
+            },
+            {
+                "keyCode": "CP-401405",
+                "operationSetCode": "NuGetVerify",
+                "parameters": [ ],
+                "toolName": "sign",
+                "toolVersion": "1.0"
+            }
+        ]
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+  - job: Sign package
+    pool:
+      name: Hosted VS2017
+    steps:
+       - checkout: none
+    dependsOn: Build
+    condition: succeeded()
