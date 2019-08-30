@@ -10,8 +10,6 @@ steps:
       Write-Host ##vso[task.setvariable variable=Version]$version
       Write-Host Setting version to $version
     workingDirectory: '$(System.DefaultWorkingDirectory)/unsigned'
-    env:
-      Version: $(Version)
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: '$(System.DefaultWorkingDirectory)/unsigned/DocumentFormat.OpenXml.$(Version).nupkg'
