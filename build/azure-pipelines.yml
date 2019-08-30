@@ -2,7 +2,7 @@ variables:
   SdkSolution: 'Open-XML-SDK.sln'
   BuildPlatform: 'Any CPU'
   BuildConfiguration: 'Release'
-  ProjectLoadStyle: 'All'
+  ProjectLoadStyle: 'DevCore21'
 
 trigger:
 - master
@@ -38,14 +38,14 @@ stages:
 - stage: Deploy
   jobs:
   - deployment: MyGet
-    environment: MyGet
+    environment: ooxmlsdk/myget
     strategy:
       runOnce:
         deploy:
           steps:
             - template: deploy-myget.yml
   - deployment: NuGet
-    environment: NuGet
+    environment: ooxmlsdk/nuget
     strategy:
       runOnce:
         deploy:
