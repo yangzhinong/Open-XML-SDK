@@ -1,0 +1,3 @@
+steps:
+  - powershell: |
+    Write-Host "Deploy to NuGet"
