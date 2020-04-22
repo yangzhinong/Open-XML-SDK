@@ -4,21 +4,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Version 2.10.0
+## Version 2.11.0 - Unreleased
+### Added
+- Added `FileFormatVersions.2019` enum (#695)
+- Added `ChartSpace` and chart elements for the new 2016 namespaces. This allows the connecting pieces for building a chart part with chart styles like "Sunburst" (#687).
+- Added `OpenXmlElementFunctionalExtensions.With(...)` extension methods, which offer flexible means for constructing `OpenXmlElement` instances in the context of pure functional transformations (#679)
+- Added minimum Office versions for enum types and values (#707).
+- Added additional `CompatSettingNameValues` values: `UseWord2013TrackBottomHyphenation`, `AllowHyphenationAtTrackBottom`, and `AllowTextAfterFloatingTableBreak` (#706).
+- Added gfxdata attribue to Arc, Curve, Line, PolyLine, Group, Image, Oval, Rect, and RoundRect shape complex types per MS-OI29500 2.1.1783-1799 (#709)
+
+### Changes
+- Marked the property setters in `OpenXmlAttribute` as obsolete as structs should not have mutable state (#698)
+
+## Version 2.10.1 - 2020-02-28
+### Fixed
+- Ensured attributes are available when `OpenXmlElement` is initialized with outer XML (#684, #692)
+- Some documentation errors (#681)
+- Removed state that made it non-thread safe to validate elements under certain conditions (#686)
+- Correctly inserts strongly-typed elements before known elements that are not strongly-typed (#690)
+
+## Version 2.10.0 - 2020-01-10
 ### Added
 - Added initial Office 2016 support, including `FileFormatVersion.Office2016`, `ExtendedChartPart` and other new schema elements (#586)
 - Added .NET Standard 2.0 target (#587)
+- Included symbols support for debugging (#650)
 - Exposed `IXmlNamespaceResolver` from `XmlPath` instead of formatted list of strings to expose namespace/prefix mapping (#536)
 - Implemented `IComparable<T>` and `IEquatable<T>` on `OpenXmlComparableSimpleValue` to allow comparisons without boxing (#550)
+- Added `OpenXmlPackage.RootPart` to easily access the root part on any package (#661)
 
 ### Changes
+- Updated to v4.7.0 of System.IO.Packaging which brings in a number of perf fixes (#660)
 - Consolidated data for element children/properties to reduce duplication (#540, #547, #548)
 - Replaced opaque binary data for element children constraints with declarative model (#603)
 - A number of performance fixes to minimize allocations where possible
 - 20% size reduction from 5.5mb to 4.3mb
+- The validation subsystem went through a drastic redesign. This may cause changes in what errors are reported.
 
 ### Fixed
 - Fixed some documentation inconsistencies (#582)
+- Fixed `ToFlatOpcDocument`, `ToFlatOpcString`, `FromFlatOpcDocument`, and `FromFlatOpcString` to correctly process Alternative Format Import Parts, or "altChunk parts" (#659)
 
 ## Version 2.9.1 - 2019-03-13
 ### Changed

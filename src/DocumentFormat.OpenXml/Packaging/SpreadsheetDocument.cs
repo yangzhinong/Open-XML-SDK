@@ -85,6 +85,8 @@ namespace DocumentFormat.OpenXml.Packaging
             }
         }
 
+        internal override ApplicationType ApplicationType => ApplicationType.Excel;
+
         private void UpdateDocumentTypeFromContentType()
         {
             if (MainPartContentType == null)
@@ -212,7 +214,9 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument CreateFromTemplate(string path)
         {
             if (path == null)
+            {
                 throw new ArgumentNullException(nameof(path));
+            }
 
             // Check extensions as the template must have a valid Word Open XML extension.
             string extension = Path.GetExtension(path);
@@ -230,7 +234,9 @@ namespace DocumentFormat.OpenXml.Packaging
 
                 // If the template is a document rather than a template, we are done.
                 if (extension == ".xlsx" || extension == ".xlsm")
+                {
                     return document;
+                }
 
                 // Otherwise, we'll have to do some more work.
                 // Firstly, we'll change the document type from Template to Document.
@@ -255,6 +261,11 @@ namespace DocumentFormat.OpenXml.Packaging
         /// <exception cref="ArgumentException">Thrown when specified to process the markup compatibility but the given target FileFormatVersion is incorrect.</exception>
         public static SpreadsheetDocument Open(string path, bool isEditable, OpenSettings openSettings)
         {
+            if (openSettings is null)
+            {
+                throw new ArgumentNullException(nameof(openSettings));
+            }
+
             if (openSettings.MarkupCompatibilityProcessSettings.ProcessMode != MarkupCompatibilityProcessMode.NoProcess
                 && !openSettings.MarkupCompatibilityProcessSettings.TargetFileFormatVersions.Any())
             {
@@ -287,8 +298,13 @@ namespace DocumentFormat.OpenXml.Packaging
         /// <exception cref="IOException">Thrown when "stream" is not opened with Read (ReadWrite) access.</exception>
         /// <exception cref="OpenXmlPackageException">Thrown when the package is not valid Open XML SpreadsheetDocument.</exception>
         /// <exception cref="ArgumentException">Thrown when specified to process the markup compatibility but the given target FileFormatVersion is incorrect.</exception>
-        public static SpreadsheetDocument Open(System.IO.Stream stream, bool isEditable, OpenSettings openSettings)
+        public static SpreadsheetDocument Open(Stream stream, bool isEditable, OpenSettings openSettings)
         {
+            if (openSettings is null)
+            {
+                throw new ArgumentNullException(nameof(openSettings));
+            }
+
             if (openSettings.MarkupCompatibilityProcessSettings.ProcessMode != MarkupCompatibilityProcessMode.NoProcess
                 && !openSettings.MarkupCompatibilityProcessSettings.TargetFileFormatVersions.Any())
             {
@@ -322,6 +338,11 @@ namespace DocumentFormat.OpenXml.Packaging
         /// <exception cref="ArgumentException">Thrown when specified to process the markup compatibility but the given target FileFormatVersion is incorrect.</exception>
         public static SpreadsheetDocument Open(Package package, OpenSettings openSettings)
         {
+            if (openSettings is null)
+            {
+                throw new ArgumentNullException(nameof(openSettings));
+            }
+
             if (openSettings.MarkupCompatibilityProcessSettings.ProcessMode != MarkupCompatibilityProcessMode.NoProcess
                 && !openSettings.MarkupCompatibilityProcessSettings.TargetFileFormatVersions.Any())
             {
@@ -629,6 +650,9 @@ namespace DocumentFormat.OpenXml.Packaging
             InitPart(childPart, WebExTaskpanesPart.ContentTypeConstant);
             return childPart;
         }
+
+        /// <inheritdoc />
+        public override OpenXmlPart RootPart => WorkbookPart;
 
         /// <summary>
         /// Gets the WorkbookPart of the SpreadsheetDocument.

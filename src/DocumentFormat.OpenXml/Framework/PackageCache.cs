@@ -3,12 +3,7 @@
 
 using DocumentFormat.OpenXml.Packaging;
 using System;
-
-#if NO_CONCURRENT_COLLECTIONS
-using System.Collections.Generic;
-#else
 using System.Collections.Concurrent;
-#endif
 
 namespace DocumentFormat.OpenXml.Framework
 {
@@ -45,41 +40,27 @@ namespace DocumentFormat.OpenXml.Framework
             }
         }
 
-        public OpenXmlPartData ParsePart(Type type) => _partData.GetOrAdd(type, CreatePartData);
+        /// <summary>
+        /// Extract the part constraints from a given container.
+        /// </summary>
+        public OpenXmlPartData ParsePartData(OpenXmlPartContainer part) => _partData.GetOrAdd(part.GetType(), CreatePartData);
 
-        public OpenXmlPartData ParsePart(OpenXmlPartContainer part) => ParsePart(part.GetType());
+        /// <summary>
+        /// Extract attribute, child elements, and other metadata from elements. If possible, use <see cref="ParseElementData(OpenXmlElement)"/>.
+        /// </summary>
+        public OpenXmlElementData ParseElementData(Type type) => _elementData.GetOrAdd(type, CreateElementData);
 
-        public OpenXmlElementData ParseElement(Type type) => _elementData.GetOrAdd(type, CreateElementData);
+        /// <summary>
+        /// Extract attribute, child elements, and other metadata from elements
+        /// </summary>
+        public OpenXmlElementData ParseElementData(OpenXmlElement element) => ParseElementData(element.GetType());
 
-        public OpenXmlElementData ParseElement(OpenXmlElement element) => ParseElement(element.GetType());
-
-        private OpenXmlPartData CreatePartData(Type type) => new OpenXmlPartData(type, ParseElement);
+        private OpenXmlPartData CreatePartData(Type type) => new OpenXmlPartData(type, ParseElementData);
 
         private OpenXmlElementData CreateElementData(Type type) => new OpenXmlElementData(type, this);
 
-#if NO_CONCURRENT_COLLECTIONS
-        private sealed class TypeConcurrentDictionary<TValue>
-        {
-            private readonly Dictionary<Type, TValue> _dictionary = new Dictionary<Type, TValue>();
-
-            public TValue GetOrAdd(Type type, Func<Type, TValue> create)
-            {
-                lock (_dictionary)
-                {
-                    if (!_dictionary.TryGetValue(type, out var result))
-                    {
-                        result = create(type);
-                        _dictionary[type] = result;
-                    }
-
-                    return result;
-                }
-            }
-        }
-#else
         private sealed class TypeConcurrentDictionary<TValue> : ConcurrentDictionary<Type, TValue>
         {
         }
-#endif
     }
 }

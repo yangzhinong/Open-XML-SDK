@@ -10,7 +10,7 @@ namespace DocumentFormat.OpenXml
     /// <summary>
     /// Defines an OfficeAvailabilityAttribute class to indicate whether the property is available in a specific version of an Office application.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Enum)]
     public sealed class OfficeAvailabilityAttribute : Attribute, IOpenXmlSimpleTypeValidator
     {
         /// <summary>
@@ -28,13 +28,15 @@ namespace DocumentFormat.OpenXml
             OfficeVersion = officeVersion;
         }
 
-        void IOpenXmlSimpleTypeValidator.Validate(ValidatorContext context)
+        void IOpenXmlSimpleTypeValidator.Validate(ValidationContext context)
         {
-            if (!context.Version.AtLeast(OfficeVersion) && context.Value?.HasValue == true && !context.McContext.IsIgnorableNs(context.QName.Namespace))
+            var current = context.Stack.Current;
+
+            if (!context.FileFormat.AtLeast(OfficeVersion) && current.Value?.HasValue == true && !context.McContext.IsIgnorableNs(current.Property.GetQName().Namespace))
             {
                 context.CreateError(
                     id: "Sch_UndeclaredAttribute",
-                    description: SR.Format(ValidationResources.Sch_UndeclaredAttribute, context.QName),
+                    description: SR.Format(ValidationResources.Sch_UndeclaredAttribute, current.Property.GetQName()),
                     errorType: ValidationErrorType.Schema);
             }
         }

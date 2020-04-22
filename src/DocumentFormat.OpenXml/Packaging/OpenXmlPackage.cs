@@ -3,6 +3,7 @@
 
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Framework;
+using DocumentFormat.OpenXml.Validation.Semantic;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,6 +33,11 @@ namespace DocumentFormat.OpenXml.Packaging
             : base()
         {
         }
+
+        /// <summary>
+        /// Gets the root part for the package.
+        /// </summary>
+        public virtual OpenXmlPart RootPart => throw new InvalidDataException(ExceptionMessages.UnknownPackage);
 
         /// <summary>
         /// Initializes a new instance of the OpenXmlPackage class using the supplied Open XML package.
@@ -229,6 +235,8 @@ namespace DocumentFormat.OpenXml.Packaging
 
         internal OpenSettings OpenSettings { get; set; }
 
+        internal virtual ApplicationType ApplicationType => ApplicationType.None;
+
         internal bool StrictTranslation { get; set; } = false;
 
         /// <summary>
@@ -336,7 +344,8 @@ namespace DocumentFormat.OpenXml.Packaging
         /// <summary>
         /// Deletes all the parts with the specified part type from the package recursively.
         /// </summary>
-        public void DeletePartsRecursivelyOfType<T>() where T : OpenXmlPart
+        public void DeletePartsRecursivelyOfType<T>()
+            where T : OpenXmlPart
         {
             ThrowIfObjectDisposed();
             DeletePartsRecursivelyOfTypeBase<T>();
@@ -542,7 +551,7 @@ namespace DocumentFormat.OpenXml.Packaging
         {
             ThrowIfObjectDisposed();
 
-            Uri partUri = null;
+            Uri partUri;
 
             // fix bug #241492
             // check to avoid name conflict with orphan parts in the packages.
@@ -565,7 +574,7 @@ namespace DocumentFormat.OpenXml.Packaging
         {
             ThrowIfObjectDisposed();
 
-            Uri partUri = null;
+            Uri partUri;
 
             // fix bug #241492
             // check to avoid name conflict with orphan parts in the packages.
@@ -641,9 +650,13 @@ namespace DocumentFormat.OpenXml.Packaging
             get
             {
                 if (OpenSettings.MarkupCompatibilityProcessSettings == null)
+                {
                     return new MarkupCompatibilityProcessSettings(MarkupCompatibilityProcessMode.NoProcess, FileFormatVersions.Office2007);
+                }
                 else
+                {
                     return OpenSettings.MarkupCompatibilityProcessSettings;
+                }
             }
         }
 
@@ -840,103 +853,80 @@ namespace DocumentFormat.OpenXml.Packaging
         /// </summary>
         /// <typeparam name="T">The type of the document's main part.</typeparam>
         /// <remarks>The MainDocumentPart will be changed.</remarks>
-        internal void ChangeDocumentTypeInternal<T>() where T : OpenXmlPart
+        internal void ChangeDocumentTypeInternal<T>()
+            where T : OpenXmlPart
         {
             ThrowIfObjectDisposed();
 
             T mainPart = GetSubPartOfType<T>();
-            MemoryStream memoryStream = null;
-            ExtendedPart tempPart = null;
-            Dictionary<string, OpenXmlPart> childParts = new Dictionary<string, OpenXmlPart>();
-            ReferenceRelationship[] referenceRelationships;
+            Dictionary<string, OpenXmlPart> childParts = new Dictionary<string, OpenXmlPart>(StringComparer.Ordinal);
 
             try
             {
-                // read the content to local string
-                using (Stream mainPartStream = mainPart.GetStream())
+                using (var memoryStream = mainPart.CopyToMemoryStream())
                 {
-                    if (mainPartStream.Length > int.MaxValue)
+                    var tempPart = AddExtendedPart(@"http://temp", MainPartContentType, @".xml");
+
+                    // Make a copy as we will remove old parts and need the originals later
+                    foreach (KeyValuePair<string, OpenXmlPart> idPartPair in mainPart.ChildrenRelationshipParts)
                     {
-                        throw new OpenXmlPackageException(ExceptionMessages.DocumentTooBig);
+                        childParts.Add(idPartPair.Key, idPartPair.Value);
                     }
 
-                    memoryStream = new MemoryStream(Convert.ToInt32(mainPartStream.Length));
-                    mainPartStream.CopyTo(memoryStream);
+                    ReferenceRelationship[] referenceRelationships = mainPart.ReferenceRelationshipList.ToArray();
+
+                    Uri uri = mainPart.Uri;
+                    string id = GetIdOfPart(mainPart);
+
+                    // remove the old part
+                    ChildrenRelationshipParts.Remove(id);
+                    DeleteRelationship(id);
+                    mainPart.Destroy();
+
+                    // create new part
+                    T newMainPart = ClassActivator.CreateInstance<T>();
+
+                    // do not call this.InitPart( ).  copy the code here
+                    newMainPart.CreateInternal2(this, null, MainPartContentType, uri);
+
+                    // add it and get the id
+                    string relationshipId = AttachChild(newMainPart, id);
+
+                    ChildrenRelationshipParts.Add(relationshipId, newMainPart);
+
+                    // copy the stream back
+                    memoryStream.Position = 0;
+                    newMainPart.FeedData(memoryStream);
+
+                    // add back all relationships
+                    foreach (KeyValuePair<string, OpenXmlPart> idPartPair in childParts)
+                    {
+                        // just call AttachChild( ) is OK. No need to call AddPart( ... )
+                        newMainPart.AttachChild(idPartPair.Value, idPartPair.Key);
+                        newMainPart.ChildrenRelationshipParts.Add(idPartPair.Key, idPartPair.Value);
+                    }
+
+                    foreach (ExternalRelationship externalRel in referenceRelationships.OfType<ExternalRelationship>())
+                    {
+                        newMainPart.AddExternalRelationship(externalRel.RelationshipType, externalRel.Uri, externalRel.Id);
+                    }
+
+                    foreach (HyperlinkRelationship hyperlinkRel in referenceRelationships.OfType<HyperlinkRelationship>())
+                    {
+                        newMainPart.AddHyperlinkRelationship(hyperlinkRel.Uri, hyperlinkRel.IsExternal, hyperlinkRel.Id);
+                    }
+
+                    foreach (DataPartReferenceRelationship dataPartReference in referenceRelationships.OfType<DataPartReferenceRelationship>())
+                    {
+                        newMainPart.AddDataPartReferenceRelationship(dataPartReference);
+                    }
+
+                    // delete the temp part
+                    id = GetIdOfPart(tempPart);
+                    ChildrenRelationshipParts.Remove(id);
+                    DeleteRelationship(id);
+                    tempPart.Destroy();
                 }
-
-                tempPart = AddExtendedPart(@"http://temp", MainPartContentType, @".xml");
-
-                foreach (KeyValuePair<string, OpenXmlPart> idPartPair in mainPart.ChildrenRelationshipParts)
-                {
-                    childParts.Add(idPartPair.Key, idPartPair.Value);
-                }
-
-                referenceRelationships = mainPart.ReferenceRelationshipList.ToArray();
-            }
-            catch (OpenXmlPackageException e)
-            {
-                throw new OpenXmlPackageException(ExceptionMessages.CannotChangeDocumentType, e);
-            }
-#if FEATURE_SYSTEMEXCEPTION
-            catch (SystemException e)
-            {
-                throw new OpenXmlPackageException(ExceptionMessages.CannotChangeDocumentType, e);
-            }
-#endif
-
-            try
-            {
-                Uri uri = mainPart.Uri;
-                string id = GetIdOfPart(mainPart);
-
-                // remove the old part
-                ChildrenRelationshipParts.Remove(id);
-                DeleteRelationship(id);
-                mainPart.Destroy();
-
-                // create new part
-                T newMainPart = ClassActivator.CreateInstance<T>();
-
-                // do not call this.InitPart( ).  copy the code here
-                newMainPart.CreateInternal2(this, null, MainPartContentType, uri);
-
-                // add it and get the id
-                string relationshipId = AttachChild(newMainPart, id);
-
-                ChildrenRelationshipParts.Add(relationshipId, newMainPart);
-
-                // copy the stream back
-                memoryStream.Position = 0;
-                newMainPart.FeedData(memoryStream);
-
-                // add back all relationships
-                foreach (KeyValuePair<string, OpenXmlPart> idPartPair in childParts)
-                {
-                    // just call AttachChild( ) is OK. No need to call AddPart( ... )
-                    newMainPart.AttachChild(idPartPair.Value, idPartPair.Key);
-                    newMainPart.ChildrenRelationshipParts.Add(idPartPair.Key, idPartPair.Value);
-                }
-
-                foreach (ExternalRelationship externalRel in referenceRelationships.OfType<ExternalRelationship>())
-                {
-                    newMainPart.AddExternalRelationship(externalRel.RelationshipType, externalRel.Uri, externalRel.Id);
-                }
-
-                foreach (HyperlinkRelationship hyperlinkRel in referenceRelationships.OfType<HyperlinkRelationship>())
-                {
-                    newMainPart.AddHyperlinkRelationship(hyperlinkRel.Uri, hyperlinkRel.IsExternal, hyperlinkRel.Id);
-                }
-
-                foreach (DataPartReferenceRelationship dataPartReference in referenceRelationships.OfType<DataPartReferenceRelationship>())
-                {
-                    newMainPart.AddDataPartReferenceRelationship(dataPartReference);
-                }
-
-                // delete the temp part
-                id = GetIdOfPart(tempPart);
-                ChildrenRelationshipParts.Remove(id);
-                DeleteRelationship(id);
-                tempPart.Destroy();
             }
             catch (OpenXmlPackageException e)
             {
@@ -1184,7 +1174,9 @@ namespace DocumentFormat.OpenXml.Packaging
         /// <returns>The cloned OpenXml package.</returns>
         public OpenXmlPackage Clone()
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope
             return Clone(new MemoryStream(), true, new OpenSettings());
+#pragma warning restore CA2000 // Dispose objects before losing scope
         }
 
         #endregion Default clone method
@@ -1226,7 +1218,9 @@ namespace DocumentFormat.OpenXml.Packaging
         public OpenXmlPackage Clone(Stream stream, bool isEditable, OpenSettings openSettings)
         {
             if (stream == null)
+            {
                 throw new ArgumentNullException(nameof(stream));
+            }
 
             // Use this OpenXml package's OpenSettings if none are provided.
             // This is more in line with cloning than providing the default
@@ -1234,7 +1228,9 @@ namespace DocumentFormat.OpenXml.Packaging
             // something, we'll later open the clone with this OpenXml
             // package's OpenSettings.
             if (openSettings == null)
+            {
                 openSettings = OpenSettings;
+            }
 
             lock (_saveAndCloneLock)
             {
@@ -1257,7 +1253,9 @@ namespace DocumentFormat.OpenXml.Packaging
                 using (OpenXmlPackage clone = CreateClone(stream))
                 {
                     foreach (var part in Parts)
+                    {
                         clone.AddPart(part.OpenXmlPart, part.RelationshipId);
+                    }
                 }
 
                 return OpenClone(stream, isEditable, openSettings);
@@ -1322,7 +1320,9 @@ namespace DocumentFormat.OpenXml.Packaging
         public OpenXmlPackage Clone(string path, bool isEditable, OpenSettings openSettings)
         {
             if (path == null)
+            {
                 throw new ArgumentNullException(nameof(path));
+            }
 
             // Use this OpenXml package's OpenSettings if none are provided.
             // This is more in line with cloning than providing the default
@@ -1330,7 +1330,9 @@ namespace DocumentFormat.OpenXml.Packaging
             // something, we'll later open the clone with this OpenXml
             // package's OpenSettings.
             if (openSettings == null)
+            {
                 openSettings = OpenSettings;
+            }
 
             lock (_saveAndCloneLock)
             {
@@ -1345,7 +1347,9 @@ namespace DocumentFormat.OpenXml.Packaging
                 using (OpenXmlPackage clone = CreateClone(path))
                 {
                     foreach (var part in Parts)
+                    {
                         clone.AddPart(part.OpenXmlPart, part.RelationshipId);
+                    }
                 }
 
                 return OpenClone(path, isEditable, openSettings);
@@ -1394,7 +1398,9 @@ namespace DocumentFormat.OpenXml.Packaging
         public OpenXmlPackage Clone(Package package, OpenSettings openSettings)
         {
             if (package == null)
+            {
                 throw new ArgumentNullException(nameof(package));
+            }
 
             // Use this OpenXml package's OpenSettings if none are provided.
             // This is more in line with cloning than providing the default
@@ -1402,7 +1408,9 @@ namespace DocumentFormat.OpenXml.Packaging
             // something, we'll later open the clone with this OpenXml
             // package's OpenSettings.
             if (openSettings == null)
+            {
                 openSettings = OpenSettings;
+            }
 
             lock (_saveAndCloneLock)
             {

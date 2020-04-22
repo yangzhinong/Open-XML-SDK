@@ -765,11 +765,11 @@ namespace DocumentFormat.OpenXml
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException(nameof(name));
+                throw new ArgumentException(ExceptionMessages.StringArgumentEmptyException, nameof(name));
             }
 
             if (NamespaceIdMap.TryGetNamespaceId(namespaceUri, out byte nsId)
-                && PackageCache.Cache.ParseElement(typeof(OpenXmlPartRootElement)).Children.Create(nsId, name) is OpenXmlElement element)
+                && PackageCache.Cache.ParseElementData(typeof(OpenXmlPartRootElement)).Children.Create(nsId, name) is OpenXmlElement element)
             {
                 return element;
             }

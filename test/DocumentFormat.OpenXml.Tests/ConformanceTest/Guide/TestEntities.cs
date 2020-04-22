@@ -63,14 +63,18 @@ namespace DocumentFormat.OpenXml.Tests.GuideTest
                 PresentationExtension slideGuidePresentationExtension = (PresentationExtension)slideGuideList.Parent;
                 SldExtUri = slideGuidePresentationExtension.Uri;
                 if (string.IsNullOrEmpty(SldExtUri))
+                {
                     throw new Exception("Uri attribute value in Extension element is not set. It element of P15.SlideGuideList parent element.");
+                }
 
                 //Get Extension Uri value. (This element is P15.SlideGuideList parent element.)
                 P15.NotesGuideList notesGuideList = package.PresentationPart.RootElement.Descendants<P15.NotesGuideList>().Single();
                 PresentationExtension notesGuidePresentationExtension = (PresentationExtension)notesGuideList.Parent;
                 NotesExtUri = notesGuidePresentationExtension.Uri;
                 if (string.IsNullOrEmpty(NotesExtUri))
+                {
                     throw new Exception("Uri attribute value in Extension element is not set. It element of P15.SlideGuideList parent element.");
+                }
             }
         }
 
@@ -246,17 +250,17 @@ namespace DocumentFormat.OpenXml.Tests.GuideTest
         {
             using (PresentationDocument package = PresentationDocument.Open(stream, false))
             {
-                log.Verify(package.PresentationPart.RootElement.Descendants<PresentationExtensionList>().Count() == 0, "Exist PresentationExtensionList element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<PresentationExtensionList>().Any(), "Exist PresentationExtensionList element.");
 
-                log.Verify(package.PresentationPart.RootElement.Descendants<PresentationExtension>().Count() == 0, "Exist PresentationExtension element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<PresentationExtension>().Any(), "Exist PresentationExtension element.");
 
-                log.Verify(package.PresentationPart.RootElement.Descendants<P15.SlideGuideList>().Count() == 0, "Exist ExtendedGuideList element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<P15.SlideGuideList>().Any(), "Exist ExtendedGuideList element.");
 
-                log.Verify(package.PresentationPart.RootElement.Descendants<P15.ExtendedGuide>().Count() == 0, "Exist ExtendedGuide element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<P15.ExtendedGuide>().Any(), "Exist ExtendedGuide element.");
 
-                log.Verify(package.PresentationPart.RootElement.Descendants<P15.ColorType>().Count() == 0, "Exist ColorType element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<P15.ColorType>().Any(), "Exist ColorType element.");
 
-                log.Verify(package.PresentationPart.RootElement.Descendants<A.RgbColorModelHex>().Count() == 0, "Exist RgbColorModelHex element.");
+                log.Verify(!package.PresentationPart.RootElement.Descendants<A.RgbColorModelHex>().Any(), "Exist RgbColorModelHex element.");
             }
         }
 

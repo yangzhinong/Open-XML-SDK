@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using DocumentFormat.OpenXml.Validation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,7 +29,8 @@ namespace DocumentFormat.OpenXml.Framework.Tests
         {
             var attribute = Assert.Single(Parse(typeof(RequiredValidator)).RawAttributes);
 
-            Assert.Collection(attribute.Validators,
+            Assert.Collection(
+                attribute.Validators,
                 t => Assert.IsType<RequiredValidatorAttribute>(t),
                 t => Assert.IsType<StringValidatorAttribute>(t));
         }
@@ -38,14 +40,16 @@ namespace DocumentFormat.OpenXml.Framework.Tests
         {
             var attribute = Assert.Single(Parse(typeof(JustUnionValidator)).RawAttributes);
 
-            Assert.Collection(attribute.Validators,
+            Assert.Collection(
+                attribute.Validators,
                 t => Assert.IsType<StringValidatorAttribute>(t),
                 t =>
                 {
                     var union = Assert.IsType<UnionValidator>(t);
 
                     Assert.Equal(0, union.Id);
-                    Assert.Collection(union.Validators,
+                    Assert.Collection(
+                        union.Validators,
                         v => Assert.IsType<StringValidatorAttribute>(v),
                         v => Assert.IsType<StringValidatorAttribute>(v));
                 });
@@ -79,7 +83,7 @@ namespace DocumentFormat.OpenXml.Framework.Tests
 
         private class CustomValidator : Attribute, IOpenXmlSimpleTypeValidator
         {
-            public void Validate(ValidatorContext context) => throw new NotImplementedException();
+            public void Validate(ValidationContext context) => throw new NotImplementedException();
         }
 
         private class BaseElement : OpenXmlElement

@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using DocumentFormat.OpenXml.Framework;
-using DocumentFormat.OpenXml.Validation.Schema.Restrictions;
 using System;
 using System.Diagnostics;
 
@@ -13,23 +12,16 @@ namespace DocumentFormat.OpenXml.Validation.Schema
     /// </summary>
     internal class SchemaTypeValidator
     {
-        private readonly FileFormatVersions _version;
-
-        public SchemaTypeValidator(FileFormatVersions version)
-        {
-            _version = version;
-        }
-
         /// <summary>
         /// Only validation whether the children elements are valid according to this type's constraint defined in schema.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        public void Validate(ValidationContext validationContext)
+        public static void Validate(ValidationContext validationContext)
         {
             Debug.Assert(validationContext != null);
-            Debug.Assert(validationContext.Element != null);
+            Debug.Assert(validationContext.Stack.Current.Element != null);
 
-            OpenXmlElement theElement = validationContext.Element;
+            OpenXmlElement theElement = validationContext.Stack.Current.Element;
 
             Debug.Assert(!(theElement is OpenXmlUnknownElement));
             Debug.Assert(!(theElement is OpenXmlMiscNode));
@@ -49,7 +41,7 @@ namespace DocumentFormat.OpenXml.Validation.Schema
                 return;
             }
 
-            // validate Inorable, ProcessContent, etc. compatibility-rule attributes
+            // validate Ignorable, ProcessContent, etc. compatibility-rule attributes
             CompatibilityRuleAttributesValidator.ValidateMcAttributes(validationContext);
 
             ValidateAttributes(validationContext);
@@ -57,11 +49,11 @@ namespace DocumentFormat.OpenXml.Validation.Schema
             // validate particles
             if (theElement is OpenXmlLeafTextElement)
             {
-                SimpleContentComplexTypeValidator.Validate(validationContext);
+                ValidateSimpleContextComplexType(validationContext);
             }
             else if (theElement is OpenXmlLeafElement)
             {
-                EmptyComplexTypeValidator.Validate(validationContext);
+                ValidateEmptyComplexType(validationContext);
             }
             else
             {
@@ -73,14 +65,14 @@ namespace DocumentFormat.OpenXml.Validation.Schema
                 if (theElement.ParticleConstraint != null)
                 {
                     // composite element
-                    CompositeComplexTypeValidator.Validate(validationContext, theElement.ParticleConstraint.Build(_version));
+                    ValidateCompositeComplexType(validationContext);
                 }
                 else
                 {
                     // special case, see O14 bug #662644
                     // A root element which does not allow any children.
                     Debug.Assert(theElement is OpenXmlPartRootElement);
-                    EmptyRootComplexTypeValidator.Validate(validationContext);
+                    ValidateEmptyRootComplexType(validationContext);
                 }
             }
         }
@@ -91,13 +83,13 @@ namespace DocumentFormat.OpenXml.Validation.Schema
         /// <param name="validationContext">The validation context.</param>
         private static void ValidateAttributes(ValidationContext validationContext)
         {
-            var element = validationContext.Element;
+            var element = validationContext.Stack.Current.Element;
 
             ValidationErrorInfo errorInfo;
 
             foreach (var attribute in element.Attributes)
             {
-                ValidateValue(validationContext, attribute.Property.Validators, attribute.Value, attribute.Property.GetQName().ToString(), attribute.Property, true);
+                ValidateValue(validationContext, attribute.Property.Validators, attribute.Value, attribute.Property, true);
             }
 
             // all unknown attributes (attributes not defined in schema) are in ExtendedAttributes.
@@ -110,7 +102,7 @@ namespace DocumentFormat.OpenXml.Validation.Schema
                 }
 
                 // xml:space is always allowed
-                else if ("http://www.w3.org/XML/1998/namespace" == extendedAttribute.NamespaceUri)
+                else if (extendedAttribute.NamespaceUri == "http://www.w3.org/XML/1998/namespace")
                 {
                 }
                 else
@@ -124,19 +116,21 @@ namespace DocumentFormat.OpenXml.Validation.Schema
             }
         }
 
-        internal static void ValidateValue(ValidationContext validationContext, ValidatorCollection validators, OpenXmlSimpleType value, string qname, ElementProperty<OpenXmlSimpleType> state, bool isAttribute)
+        private static void ValidateValue(ValidationContext validationContext, ValidatorCollection validators, OpenXmlSimpleType value, ElementProperty<OpenXmlSimpleType> state, bool isAttribute)
         {
-            var element = validationContext.Element;
             var errors = validationContext.Errors.Count;
 
-            foreach (var validator in validators)
+            using (validationContext.Stack.Push(value, state, isAttribute))
             {
-                validator.Validate(validationContext.ToContext(value, state, isAttribute));
-
-                // Break early if validation has hit an error
-                if (errors != validationContext.Errors.Count)
+                foreach (var validator in validators)
                 {
-                    return;
+                    validator.Validate(validationContext);
+
+                    // Break early if validation has hit an error
+                    if (errors != validationContext.Errors.Count)
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -144,43 +138,18 @@ namespace DocumentFormat.OpenXml.Validation.Schema
         /// <summary>
         /// empty CT, OpenXmlLeafElement
         /// </summary>
-        private static class EmptyComplexTypeValidator
+        private static void ValidateEmptyComplexType(ValidationContext validationContext)
         {
-            internal static void Validate(ValidationContext validationContext)
+            OpenXmlLeafElement leafElement = (OpenXmlLeafElement)validationContext.Stack.Current.Element;
+            ValidationErrorInfo errorInfo;
+
+            if (leafElement.ShadowElement != null)
             {
-                OpenXmlLeafElement leafElement = (OpenXmlLeafElement)validationContext.Element;
-                ValidationErrorInfo errorInfo;
-
-                if (leafElement.ShadowElement != null)
-                {
-                    foreach (var child in leafElement.ShadowElement.ChildElements)
-                    {
-                        if (!(child is OpenXmlMiscNode))
-                        {
-                            errorInfo = validationContext.ComposeSchemaValidationError(leafElement, null, "Sch_InvalidChildinLeafElement", leafElement.XmlQualifiedName.ToString());
-                            validationContext.AddError(errorInfo);
-                            return; // just return one error is enough.
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// empty CT, but used as part root element, OpenXmlPartRootElement
-        /// </summary>
-        private static class EmptyRootComplexTypeValidator
-        {
-            internal static void Validate(ValidationContext validationContext)
-            {
-                var element = (OpenXmlCompositeElement)validationContext.Element;
-                ValidationErrorInfo errorInfo;
-
-                foreach (var child in element.ChildElements)
+                foreach (var child in leafElement.ShadowElement.ChildElements)
                 {
                     if (!(child is OpenXmlMiscNode))
                     {
-                        errorInfo = validationContext.ComposeSchemaValidationError(element, null, "Sch_InvalidChildinLeafElement", element.XmlQualifiedName.ToString());
+                        errorInfo = validationContext.ComposeSchemaValidationError(leafElement, null, "Sch_InvalidChildinLeafElement", leafElement.XmlQualifiedName.ToString());
                         validationContext.AddError(errorInfo);
                         return; // just return one error is enough.
                     }
@@ -189,48 +158,62 @@ namespace DocumentFormat.OpenXml.Validation.Schema
         }
 
         /// <summary>
+        /// empty CT, but used as part root element, OpenXmlPartRootElement
+        /// </summary>
+        private static void ValidateEmptyRootComplexType(ValidationContext validationContext)
+        {
+            var element = (OpenXmlCompositeElement)validationContext.Stack.Current.Element;
+            ValidationErrorInfo errorInfo;
+
+            foreach (var child in element.ChildElements)
+            {
+                if (!(child is OpenXmlMiscNode))
+                {
+                    errorInfo = validationContext.ComposeSchemaValidationError(element, null, "Sch_InvalidChildinLeafElement", element.XmlQualifiedName.ToString());
+                    validationContext.AddError(errorInfo);
+                    return; // just return one error is enough.
+                }
+            }
+        }
+
+        /// <summary>
         /// simple content CT, OpenXmlLeafTextElement
         /// </summary>
-        private static class SimpleContentComplexTypeValidator
+        private static void ValidateSimpleContextComplexType(ValidationContext validationContext)
         {
-            internal static void Validate(ValidationContext validationContext)
-            {
-                // first check whether there are invalid children under this OpenXmlLeafTextElement.
-                EmptyComplexTypeValidator.Validate(validationContext);
+            // first check whether there are invalid children under this OpenXmlLeafTextElement.
+            ValidateEmptyComplexType(validationContext);
 
-                var element = (OpenXmlLeafTextElement)validationContext.Element;
-                var value = element.InnerTextToValue(element.Text);
-                var qname = element.XmlQualifiedName.ToString();
-                var state = new ElementProperty<OpenXmlSimpleType>(element.NamespaceId, element.LocalName, 0, element.ElementData.Info.Validators, new ElementPropertyAccessor<OpenXmlSimpleType>(_ => value, (_, __) => throw new NotImplementedException(), value.GetType()));
+            var element = (OpenXmlLeafTextElement)validationContext.Stack.Current.Element;
+            var value = element.InnerTextToValue(element.Text);
+            var state = new ElementProperty<OpenXmlSimpleType>(element.NamespaceId, element.LocalName, 0, element.ElementData.Info.Validators, new ElementPropertyAccessor<OpenXmlSimpleType>(_ => value, (_, __) => throw new NotImplementedException(), value.GetType()));
 
-                SchemaTypeValidator.ValidateValue(validationContext, element.ElementData.Info.Validators, value, qname, state, false);
-            }
+            SchemaTypeValidator.ValidateValue(validationContext, element.ElementData.Info.Validators, value, state, false);
         }
 
         /// <summary>
         /// Composite CT
         /// </summary>
-        private static class CompositeComplexTypeValidator
+        private static void ValidateCompositeComplexType(ValidationContext validationContext)
         {
-            internal static void Validate(ValidationContext validationContext, ParticleConstraint particleConstraint)
-            {
-                switch (particleConstraint.ParticleType)
-                {
-                    case ParticleType.All:
-                    case ParticleType.Choice:
-                    case ParticleType.Sequence:
-                    case ParticleType.Group:
-                        ParticleValidator particleValidator = (ParticleValidator)particleConstraint.ParticleValidator;
-                        particleValidator.Validate(validationContext);
-                        break;
+            var particleConstraint = validationContext.GetParticleConstraint();
 
-                    case ParticleType.Invalid:
-                    case ParticleType.Element:
-                    case ParticleType.Any:
-                    default:
-                        Debug.Assert(false);
-                        break;
-                }
+            switch (particleConstraint.ParticleType)
+            {
+                case ParticleType.All:
+                case ParticleType.Choice:
+                case ParticleType.Sequence:
+                case ParticleType.Group:
+                    ParticleValidator particleValidator = (ParticleValidator)particleConstraint.ParticleValidator;
+                    particleValidator.Validate(validationContext);
+                    break;
+
+                case ParticleType.Invalid:
+                case ParticleType.Element:
+                case ParticleType.Any:
+                default:
+                    Debug.Assert(false);
+                    break;
             }
         }
     }

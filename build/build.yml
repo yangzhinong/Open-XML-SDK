@@ -1,10 +1,17 @@
 steps:
+  - task: UseDotNet@2
+    displayName: 'Install SDK'
+    inputs:
+      packageType: 'sdk'
+      useGlobalJson: true
+
   - task: PowerShell@2
     displayName: 'Update version'
+    name: updateVersion
     inputs:
       targetType: 'inline'
       script: |
-        dotnet tool install --global GitVersion.Tool --version 5.0.1        
+        dotnet tool install --global GitVersion.Tool --version 5.1.2      
         dotnet gitversion /output buildserver /nofetch
 
   - task: VSBuild@1
@@ -25,6 +32,7 @@ steps:
 
   - publish: 'bin/$(BuildConfiguration)'
     artifact: build
+    displayName: 'Upload build assets'
 
   - task: VSBuild@1
     displayName: 'Pack SDK'
@@ -35,4 +43,4 @@ steps:
 
   - publish: '$(Build.ArtifactStagingDirectory)/unsigned'
     artifact: unsigned
-    displayName: 'Publish Unsigned Packages'
+    displayName: 'Upload Unsigned Packages'

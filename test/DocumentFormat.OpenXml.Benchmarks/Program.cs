@@ -3,6 +3,7 @@
 
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Diagnostics.Windows;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
@@ -15,6 +16,11 @@ namespace DocumentFormat.OpenXml.Benchmarks
     {
         public static void Main(string[] input)
         {
+            if (input is null)
+            {
+                throw new System.ArgumentNullException(nameof(input));
+            }
+
             var switcher = new BenchmarkSwitcher(typeof(Program).Assembly);
             var config = GetConfig(input);
 

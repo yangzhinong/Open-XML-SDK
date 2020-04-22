@@ -4,9 +4,11 @@
 
   <PropertyGroup>
     <IsShipped>true</IsShipped>
-    <TargetFrameworks>$(ProductTargetFrameworks)</TargetFrameworks> 
+    <TargetFrameworks>$(ProductTargetFrameworks)</TargetFrameworks>
     <NoWarn>$(NoWarn);3003</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +16,7 @@
          helper files to fill the gaps of the various platforms that are targeted -->
     <Compile Remove="System\**\*.cs" />
     <Compile Include="System\UriHelper.cs" />
+    <None Include="**\*.md" />
   </ItemGroup>
 
   <Choose>
@@ -35,6 +38,7 @@
       </ItemGroup>
 
       <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
+        <Compile Include="System\Collections\Concurrent\ConcurrentDictionary.cs" />
         <Compile Include="System\IO\StreamCopyExtensions.cs" />
         <Compile Include="System\Lazy{T}.cs" />
       </ItemGroup>
@@ -48,13 +52,13 @@
       </ItemGroup>
 
       <ItemGroup>
-        <PackageReference Include="System.IO.Packaging" Version="4.5.0" />
+        <PackageReference Include="System.IO.Packaging" Version="$(SystemIOPackagingVersion)" />
       </ItemGroup>
     </When>
 
     <When Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
       <ItemGroup>
-        <PackageReference Include="System.IO.Packaging" Version="4.5.0" />
+        <PackageReference Include="System.IO.Packaging" Version="$(SystemIOPackagingVersion)" />
       </ItemGroup>
 
       <!-- In order to support .NET Native, we need to include an appropriate .rd.xml -->
@@ -72,7 +76,7 @@
 
     <When Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
       <ItemGroup>
-        <PackageReference Include="System.IO.Packaging" Version="4.5.0" />
+        <PackageReference Include="System.IO.Packaging" Version="$(SystemIOPackagingVersion)" />
       </ItemGroup>
 
       <!-- In order to support .NET Native, we need to include an appropriate .rd.xml -->

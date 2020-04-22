@@ -20,7 +20,7 @@ namespace DocumentFormat.OpenXml
         /// <summary>
         /// Initializes a new instance of the OpenXmlLeafTextElement class.
         /// </summary>
-        protected OpenXmlLeafTextElement() : base( )
+        protected OpenXmlLeafTextElement() : base()
         {
         }
 
@@ -123,12 +123,8 @@ namespace DocumentFormat.OpenXml
         /// </summary>
         public virtual string Text
         {
-            get { return InnerText; }
-
-            set
-            {
-                InnerText = value;
-            }
+            get => InnerText;
+            set => InnerText = value;
         }
 
         /// <inheritdoc/>
@@ -168,7 +164,7 @@ namespace DocumentFormat.OpenXml
 
                 if (xmlReader.NodeType == XmlNodeType.EndElement)
                 {
-                    Debug.Assert(xmlReader.LocalName.Equals(LocalName));
+                    Debug.Assert(string.Equals(xmlReader.LocalName, LocalName, StringComparison.Ordinal));
                 }
                 else
                 {
@@ -176,7 +172,7 @@ namespace DocumentFormat.OpenXml
                     {
                         if (xmlReader.NodeType == XmlNodeType.EndElement)
                         {
-                            Debug.Assert(xmlReader.LocalName.Equals(LocalName));
+                            Debug.Assert(string.Equals(xmlReader.LocalName, LocalName, StringComparison.Ordinal));
                             break;
                         }
                         else if (string.IsNullOrEmpty(RawInnerText) &&

@@ -119,17 +119,25 @@ namespace LogUtil
         public void VerifyFalse(bool pass, string message, params object[] arguments)
         {
             if (pass)
+            {
                 Fail(message, arguments);
+            }
             else
+            {
                 Pass(message, arguments);
+            }
         }
 
         public void VerifyFalse(bool pass, string message)
         {
             if (pass)
+            {
                 Fail(message);
+            }
             else
+            {
                 Pass(message);
+            }
         }
 
         /// <summary>
@@ -211,6 +219,11 @@ namespace LogUtil
         /// <param name="arguments">List of objects to be formatted</param>
         public void VerifySubString(string actualFullString, string expectedSubString, string message, params object[] arguments)
         {
+            if (actualFullString is null)
+            {
+                throw new ArgumentNullException(nameof(actualFullString));
+            }
+
             VerifyTrue(actualFullString.Contains(expectedSubString), message, arguments);
         }
 
@@ -223,17 +236,25 @@ namespace LogUtil
         public void VerifyTrue(bool pass, string message, params object[] arguments)
         {
             if (pass)
+            {
                 Pass(message, arguments);
+            }
             else
+            {
                 Fail(message, arguments);
+            }
         }
 
         public void VerifyTrue(bool pass, string message)
         {
             if (pass)
+            {
                 Pass(message);
+            }
             else
+            {
                 Fail(message);
+            }
         }
 
         /// <summary>

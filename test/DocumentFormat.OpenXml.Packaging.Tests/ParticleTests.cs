@@ -71,7 +71,8 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
 
             Assert.NotSame(particle, built2007);
 
-            Assert.Collection(built2007.ChildrenParticles,
+            Assert.Collection(
+                built2007.ChildrenParticles,
                 p => Assert.Same(p, particle.ChildrenParticles[0]),
                 p => Assert.Same(p, particle.ChildrenParticles[2]));
 
@@ -79,7 +80,8 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
 
             Assert.NotSame(particle, built2010);
 
-            Assert.Collection(built2010.ChildrenParticles,
+            Assert.Collection(
+                built2010.ChildrenParticles,
                 p => Assert.Same(p, particle.ChildrenParticles[0]),
                 p => Assert.Same(p, particle.ChildrenParticles[1]),
                 p => Assert.Same(p, particle.ChildrenParticles[2]));
@@ -99,7 +101,8 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
 
             Assert.NotSame(particle, built2007);
 
-            Assert.Collection(built2007.ChildrenParticles,
+            Assert.Collection(
+                built2007.ChildrenParticles,
                 p => Assert.Same(p, particle.ChildrenParticles[0]),
                 p => Assert.Same(p, particle.ChildrenParticles[2]));
 
@@ -107,7 +110,8 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
 
             Assert.NotSame(particle, built2010);
 
-            Assert.Collection(built2010.ChildrenParticles,
+            Assert.Collection(
+                built2010.ChildrenParticles,
                 p => Assert.Same(p, particle.ChildrenParticles[1]),
                 p => Assert.Same(p, particle.ChildrenParticles[2]));
         }
@@ -127,7 +131,8 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
 
             Assert.NotSame(particle, built);
 
-            Assert.Collection(built.ChildrenParticles,
+            Assert.Collection(
+                built.ChildrenParticles,
                 p => Assert.Same(p, particle.ChildrenParticles[0]),
                 p => Assert.Same(p, particle.ChildrenParticles[1]),
                 p => Assert.Same(p, particle.ChildrenParticles[2]));
@@ -158,71 +163,6 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
             var particle = new NsAnyParticle(0, 1, 1);
 
             Assert.Same(particle, particle.Build(version));
-        }
-
-        [Fact]
-        public void ExpectedKind()
-        {
-            var elements = typeof(OpenXmlElement).GetTypeInfo().Assembly.GetTypes()
-                .Where(t => !t.GetTypeInfo().IsAbstract && typeof(OpenXmlCompositeElement).IsAssignableFrom(t) && t.GetConstructor(Cached.Array<Type>()) != null)
-                .Select(t =>
-                {
-                    var element = (OpenXmlCompositeElement)Activator.CreateInstance(t);
-
-                    return new ParticleInfo
-                    {
-                        Name = t.FullName,
-                        Type = element.OpenXmlCompositeType,
-                    };
-                })
-                .Where(p => p.Type != OpenXmlCompositeType.Other)
-                .OrderBy(o => o.Name);
-
-#if DEBUG
-            var tmp = Path.GetTempFileName();
-
-            _output.WriteLine($"Wrote to temp path {tmp}");
-
-            File.WriteAllText(tmp, JsonConvert.SerializeObject(elements, Formatting.Indented, new StringEnumConverter()));
-#endif
-
-            var expected = GetData<IEnumerable<ParticleInfo>>("CompositeParticleTypes");
-
-            CollectionAssert(expected, elements);
-        }
-
-        private static void CollectionAssert<T>(IEnumerable<T> expected, IEnumerable<T> actual)
-        {
-            Assert.Equal(expected.Count(), actual.Count());
-
-            using (var e1 = expected.GetEnumerator())
-            using (var e2 = actual.GetEnumerator())
-            {
-                while (e1.MoveNext() && e2.MoveNext())
-                {
-                    Assert.Equal(e1.Current, e2.Current);
-                }
-            }
-        }
-
-        private class ParticleInfo
-        {
-            public string Name { get; set; }
-
-            public OpenXmlCompositeType Type { get; set; }
-
-            public override bool Equals(object obj)
-            {
-                if (obj is ParticleInfo other)
-                {
-                    return string.Equals(Name, other.Name, StringComparison.Ordinal)
-                        && Type == other.Type;
-                }
-
-                return false;
-            }
-
-            public override int GetHashCode() => Framework.HashCode.Combine(Name, Type);
         }
 
         [Fact]
@@ -271,18 +211,6 @@ namespace DocumentFormat.OpenXml.Packaging.Tests
             }
 
             AssertEqual(constraints);
-        }
-
-        private static T GetData<T>(string name)
-        {
-            var serializer = JsonSerializer.Create();
-
-            using (var stream = typeof(ParticleTests).GetTypeInfo().Assembly.GetManifestResourceStream($"DocumentFormat.OpenXml.Packaging.Tests.data.{name}.json"))
-            using (var streamReader = new StreamReader(stream))
-            using (var reader = new JsonTextReader(streamReader))
-            {
-                return serializer.Deserialize<T>(reader);
-            }
         }
 
         private void AssertEqual(Dictionary<Type, VersionCollection<ParticleConstraint>> constraints)

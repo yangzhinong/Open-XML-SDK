@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,22 +35,24 @@ namespace DocumentFormat.OpenXml.Validation.Semantic
 
         protected static OpenXmlPart GetReferencedPart(ValidationContext context, string path)
         {
+            var current = context.Stack.Current;
+
             if (path == ".")
             {
-                return context.Part;
+                return current.Part;
             }
 
             string[] parts = path.Split('/');
 
             if (string.IsNullOrEmpty(parts[0]))
             {
-                return GetPartThroughPartPath(context.Package.Parts, parts.Skip(1).ToArray()); //absolute path
+                return GetPartThroughPartPath(current.Package.Parts, parts.Skip(1).ToArray()); //absolute path
             }
             else if (parts[0] == "..")
             {
-                var refParts = context.Package
+                var refParts = current.Package
                     .GetAllParts()
-                    .Where(p => p.Parts.Any(r => r.OpenXmlPart.PackagePart.Uri == context.Part.PackagePart.Uri));
+                    .Where(p => p.Parts.Any(r => r.OpenXmlPart.PackagePart.Uri == current.Part.PackagePart.Uri));
 
                 Debug.Assert(refParts.Count() == 1);
 
@@ -57,7 +60,7 @@ namespace DocumentFormat.OpenXml.Validation.Semantic
             }
             else
             {
-                return GetPartThroughPartPath(context.Part.Parts, parts); //relative path
+                return GetPartThroughPartPath(current.Part.Parts, parts); //relative path
             }
         }
 
@@ -170,13 +173,14 @@ namespace DocumentFormat.OpenXml.Validation.Semantic
             for (int i = 0; i < path.Length; i++)
             {
                 var s = parts.Where(p => p.OpenXmlPart.GetType().Name == path[i]).Select(t => t.OpenXmlPart);
+                var count = s.Count();
 
-                if (s.Count() > 1)
+                if (count > 1)
                 {
-                    throw new System.IO.FileFormatException("Invalid document error: more than one part retrieved for one URI.");
+                    throw new System.IO.FileFormatException(ValidationResources.MoreThanOnePartForOneUri);
                 }
 
-                if (s.Count() == 0)
+                if (count == 0)
                 {
                     return null;
                 }

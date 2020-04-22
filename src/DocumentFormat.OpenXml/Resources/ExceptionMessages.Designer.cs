@@ -12,7 +12,6 @@ namespace DocumentFormat.OpenXml {
     using System;
     using System.Reflection;
     
-    
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -20,7 +19,7 @@ namespace DocumentFormat.OpenXml {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class ExceptionMessages {
@@ -67,6 +66,15 @@ namespace DocumentFormat.OpenXml {
         internal static string AddedPartIsNotAllowed {
             get {
                 return ResourceManager.GetString("AddedPartIsNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Schemas with ParticleType.Any is not supported.
+        /// </summary>
+        internal static string AnyParticleTypeNotSupported {
+            get {
+                return ResourceManager.GetString("AnyParticleTypeNotSupported", resourceCulture);
             }
         }
         
@@ -229,15 +237,6 @@ namespace DocumentFormat.OpenXml {
         internal static string ElementIsNotInOfficeVersion {
             get {
                 return ResourceManager.GetString("ElementIsNotInOfficeVersion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The validator is set to validate content based on Microsoft Office 2016 rules. The passed in element is not defined in Microsoft Office 2016..
-        /// </summary>
-        internal static string ElementIsNotInOffice2016 {
-            get {
-                return ResourceManager.GetString("ElementIsNotInOffice2016", resourceCulture);
             }
         }
         
@@ -677,15 +676,6 @@ namespace DocumentFormat.OpenXml {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The validator is set to validate content based on Microsoft Office 2016 rules. The passed in part is not defined in Microsoft Office 2016..
-        /// </summary>
-        internal static string PartIsNotInOffice2016 {
-            get {
-                return ResourceManager.GetString("PartIsNotInOffice2016", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to A relationship can only be created between two parts in a package..
         /// </summary>
         internal static string PartNotInSamePackage {
@@ -772,6 +762,15 @@ namespace DocumentFormat.OpenXml {
         internal static string RequiredPartDoNotExist {
             get {
                 return ResourceManager.GetString("RequiredPartDoNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Root element is null..
+        /// </summary>
+        internal static string RootElementIsNull {
+            get {
+                return ResourceManager.GetString("RootElementIsNull", resourceCulture);
             }
         }
         

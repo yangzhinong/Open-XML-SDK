@@ -11,7 +11,7 @@ namespace DocumentFormat.OpenXml.Packaging
     /// <summary>
     /// Defines SpreadsheetDocument - an OpenXmlPackage represents a Spreadsheet document.
     /// </summary>
-    public partial class SpreadsheetDocument : OpenXmlPackage
+    public partial class SpreadsheetDocument
     {
         /// <summary>
         /// Converts an OpenXml package in OPC format to an <see cref="XDocument"/>
@@ -45,11 +45,16 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcDocument(XDocument document, Stream stream, bool isEditable)
         {
             if (document == null)
+            {
                 throw new ArgumentNullException(nameof(document));
-            if (stream == null)
-                throw new ArgumentNullException(nameof(stream));
+            }
 
-            return SpreadsheetDocument.Open(FromFlatOpcDocumentCore(document, stream), true);
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            return Open(FromFlatOpcDocumentCore(document, stream), true);
         }
 
         /// <summary>
@@ -63,11 +68,16 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcDocument(XDocument document, string path, bool isEditable)
         {
             if (document == null)
+            {
                 throw new ArgumentNullException(nameof(document));
-            if (path == null)
-                throw new ArgumentNullException(nameof(path));
+            }
 
-            return SpreadsheetDocument.Open(FromFlatOpcDocumentCore(document, path), isEditable);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            return Open(FromFlatOpcDocumentCore(document, path), isEditable);
         }
 
         /// <summary>
@@ -80,11 +90,16 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcDocument(XDocument document, Package package)
         {
             if (document == null)
+            {
                 throw new ArgumentNullException(nameof(document));
-            if (package == null)
-                throw new ArgumentNullException(nameof(package));
+            }
 
-            return SpreadsheetDocument.Open(FromFlatOpcDocumentCore(document, package));
+            if (package == null)
+            {
+                throw new ArgumentNullException(nameof(package));
+            }
+
+            return Open(FromFlatOpcDocumentCore(document, package));
         }
 
         /// <summary>
@@ -97,7 +112,9 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcString(string text)
         {
             if (text == null)
+            {
                 throw new ArgumentNullException(nameof(text));
+            }
 
             return FromFlatOpcDocument(XDocument.Parse(text), new MemoryStream(), true);
         }
@@ -113,9 +130,14 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcString(string text, Stream stream, bool isEditable)
         {
             if (text == null)
+            {
                 throw new ArgumentNullException(nameof(text));
+            }
+
             if (stream == null)
+            {
                 throw new ArgumentNullException(nameof(stream));
+            }
 
             return FromFlatOpcDocument(XDocument.Parse(text), stream, isEditable);
         }
@@ -131,9 +153,14 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcString(string text, string path, bool isEditable)
         {
             if (text == null)
+            {
                 throw new ArgumentNullException(nameof(text));
+            }
+
             if (path == null)
+            {
                 throw new ArgumentNullException(nameof(path));
+            }
 
             return FromFlatOpcDocument(XDocument.Parse(text), path, isEditable);
         }
@@ -148,9 +175,14 @@ namespace DocumentFormat.OpenXml.Packaging
         public static SpreadsheetDocument FromFlatOpcString(string text, Package package)
         {
             if (text == null)
+            {
                 throw new ArgumentNullException(nameof(text));
+            }
+
             if (package == null)
+            {
                 throw new ArgumentNullException(nameof(package));
+            }
 
             return FromFlatOpcDocument(XDocument.Parse(text), package);
         }

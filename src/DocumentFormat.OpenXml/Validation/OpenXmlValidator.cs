@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using DocumentFormat.OpenXml.Framework;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation.Schema;
 using DocumentFormat.OpenXml.Validation.Semantic;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace DocumentFormat.OpenXml.Validation
 {
@@ -16,135 +14,8 @@ namespace DocumentFormat.OpenXml.Validation
     /// </summary>
     public class OpenXmlValidator
     {
-        private ValidationSettings _settings;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SchemaValidator _schemaValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SemanticValidator _docSmenaticValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SemanticValidator _xlsSemanticValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SemanticValidator _pptSemanticValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SemanticValidator _fullSemanticValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private DocumentValidator _spreadsheetDocumentValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private DocumentValidator _wordprocessingDocumentValidator;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private DocumentValidator _presentationDocumentValidator;
-
-        private SchemaValidator SchemaValidator
-        {
-            get
-            {
-                if (_schemaValidator == null)
-                {
-                    _schemaValidator = new SchemaValidator(_settings.FileFormat);
-                }
-
-                return _schemaValidator;
-            }
-        }
-
-        private SemanticValidator DocSmenaticValidator
-        {
-            get
-            {
-                if (_docSmenaticValidator == null)
-                {
-                    _docSmenaticValidator = new SemanticValidator(_settings.FileFormat, ApplicationType.Word);
-                }
-
-                return _docSmenaticValidator;
-            }
-        }
-
-        private SemanticValidator XlsSemanticValidator
-        {
-            get
-            {
-                if (_xlsSemanticValidator == null)
-                {
-                    _xlsSemanticValidator = new SemanticValidator(_settings.FileFormat, ApplicationType.Excel);
-                }
-
-                return _xlsSemanticValidator;
-            }
-        }
-
-        private SemanticValidator PptSemanticValidator
-        {
-            get
-            {
-                if (_pptSemanticValidator == null)
-                {
-                    _pptSemanticValidator = new SemanticValidator(_settings.FileFormat, ApplicationType.PowerPoint);
-                }
-
-                return _pptSemanticValidator;
-            }
-        }
-
-        private SemanticValidator FullSemanticValidator
-        {
-            get
-            {
-                if (_fullSemanticValidator == null)
-                {
-                    _fullSemanticValidator = new SemanticValidator(_settings.FileFormat, ApplicationType.All);
-                }
-
-                return _fullSemanticValidator;
-            }
-        }
-
-        private DocumentValidator SpreadsheetDocumentValidator
-        {
-            get
-            {
-                if (_spreadsheetDocumentValidator == null)
-                {
-                    _spreadsheetDocumentValidator = new DocumentValidator(_settings, SchemaValidator, XlsSemanticValidator);
-                }
-
-                return _spreadsheetDocumentValidator;
-            }
-        }
-
-        private DocumentValidator WordprocessingDocumentValidator
-        {
-            get
-            {
-                if (_wordprocessingDocumentValidator == null)
-                {
-                    _wordprocessingDocumentValidator = new DocumentValidator(_settings, SchemaValidator, DocSmenaticValidator);
-                }
-
-                return _wordprocessingDocumentValidator;
-            }
-        }
-
-        private DocumentValidator PresentationDocumentValidator
-        {
-            get
-            {
-                if (_presentationDocumentValidator == null)
-                {
-                    _presentationDocumentValidator = new DocumentValidator(_settings, SchemaValidator, PptSemanticValidator);
-                }
-
-                return _presentationDocumentValidator;
-            }
-        }
+        private readonly ValidationSettings _settings;
+        private readonly ValidationCache _cache;
 
         /// <summary>
         /// Initializes a new instance of the OpenXmlValidator.
@@ -168,7 +39,9 @@ namespace DocumentFormat.OpenXml.Validation
         public OpenXmlValidator(FileFormatVersions fileFormat)
         {
             fileFormat.ThrowExceptionIfFileFormatNotSupported(nameof(fileFormat));
+
             _settings = new ValidationSettings(fileFormat);
+            _cache = new ValidationCache(fileFormat);
         }
 
         /// <summary>
@@ -183,7 +56,7 @@ namespace DocumentFormat.OpenXml.Validation
         /// <exception cref="ArgumentOutOfRangeException">Throw when the value set is less than zero.</exception>
         public int MaxNumberOfErrors
         {
-            get { return _settings.MaxNumberOfErrors; }
+            get => _settings.MaxNumberOfErrors;
 
             set
             {
@@ -256,16 +129,16 @@ namespace DocumentFormat.OpenXml.Validation
 
         private IEnumerable<ValidationErrorInfo> ValidateCore(OpenXmlPart part)
         {
-            var validator = GetValidator(part.OpenXmlPackage);
+            var validator = _cache.GetOrCreateDocumentValidator(part.OpenXmlPackage.ApplicationType);
 
-            return validator.Validate(part);
+            return validator.Validate(part, _settings);
         }
 
         private IEnumerable<ValidationErrorInfo> ValidateCore(OpenXmlPackage package)
         {
-            var validator = GetValidator(package);
+            var validator = _cache.GetOrCreateDocumentValidator(package.ApplicationType);
 
-            return validator.Validate(package);
+            return validator.Validate(package, _settings);
         }
 
         /// <summary>
@@ -302,37 +175,17 @@ namespace DocumentFormat.OpenXml.Validation
 
             FileFormat.ThrowIfNotInVersion(openXmlElement);
 
-            var validationContext = new ValidationContext
+            var validationContext = new ValidationContext(_settings, _cache);
+
+            using (validationContext.Stack.Push(element: openXmlElement))
             {
-                FileFormat = FileFormat,
-                MaxNumberOfErrors = _settings.MaxNumberOfErrors,
-                Element = openXmlElement,
-            };
+                _cache.SchemaValidator.Validate(validationContext);
 
-            SchemaValidator.Validate(validationContext);
+                var semanticValidator = _cache.GetOrCreateSemanticValidator(ApplicationType.All);
+                semanticValidator.Validate(validationContext);
 
-            validationContext.Element = openXmlElement;
-            FullSemanticValidator.Validate(validationContext);
-
-            return validationContext.Errors;
-        }
-
-        private DocumentValidator GetValidator(OpenXmlPackage package)
-        {
-            if (package is SpreadsheetDocument)
-            {
-                return SpreadsheetDocumentValidator;
+                return validationContext.Errors;
             }
-            else if (package is WordprocessingDocument wordprocessing)
-            {
-                return WordprocessingDocumentValidator;
-            }
-            else if (package is PresentationDocument presentation)
-            {
-                return PresentationDocumentValidator;
-            }
-
-            throw new System.IO.InvalidDataException(ExceptionMessages.UnknownPackage);
         }
     }
 }

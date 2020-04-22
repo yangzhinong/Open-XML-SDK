@@ -2,18 +2,20 @@
 <Project>
   <PropertyGroup>
     <IsShipped>false</IsShipped>
+    <SystemIOPackagingVersion>4.7.0</SystemIOPackagingVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 
     <!-- Because of the size of the project, to facilitate  quick development, by default only single
          frameworks will be build. This is customizable with the following possible values:
-
          - DevFramework40: .NET Framework 4.0
          - DevFramework46: .NET Framework 4.6
          - DevCore11:      .NET Core 1.1
          - DevCore21:      .NET Core 2.1
+         - DevCore31:      .NET Core 3.1
          - All: Will build for all platforms
          -->
-    <ProjectLoadStyle Condition=" '$(ProjectLoadStyle)' == '' ">DevCore21</ProjectLoadStyle>
+    <ProjectLoadStyle Condition=" '$(ProjectLoadStyle)' == '' ">DevCore31</ProjectLoadStyle>
+    <__InvalidProjectLoadStyle>false</__InvalidProjectLoadStyle>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -24,6 +26,16 @@
   </PropertyGroup>
 
   <Choose>
+    <When Condition=" '$(ProjectLoadStyle)' == 'DevFramework35' ">
+      <PropertyGroup>
+        <ProductTargetFrameworks>net35</ProductTargetFrameworks>
+        <TestTargetFrameworks>net452</TestTargetFrameworks>
+        <AssetsTargetFrameworks>net452</AssetsTargetFrameworks>
+        <!-- BenchmarkDotNet only supports .NET Standard 2.0-->
+        <BenchmarkTargetFrameworks>net461</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>net46</SamplesFrameworks>
+      </PropertyGroup>
+    </When>
     <When Condition=" '$(ProjectLoadStyle)' == 'DevFramework40' ">
       <PropertyGroup>
         <ProductTargetFrameworks>net40</ProductTargetFrameworks>
@@ -31,6 +43,7 @@
         <AssetsTargetFrameworks>net452</AssetsTargetFrameworks>
         <!-- BenchmarkDotNet only supports .NET Standard 2.0-->
         <BenchmarkTargetFrameworks>net461</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>net46</SamplesFrameworks>
       </PropertyGroup>
     </When>
     <When Condition=" '$(ProjectLoadStyle)' == 'DevFramework46' ">
@@ -39,6 +52,7 @@
         <TestTargetFrameworks>net46</TestTargetFrameworks>
         <AssetsTargetFrameworks>net452</AssetsTargetFrameworks>
         <BenchmarkTargetFrameworks>net461</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>net46</SamplesFrameworks>
       </PropertyGroup>
     </When>
     <When Condition=" '$(ProjectLoadStyle)' == 'DevCore11' ">
@@ -48,6 +62,7 @@
         <AssetsTargetFrameworks>netstandard1.3</AssetsTargetFrameworks>
         <!-- BenchmarkDotNet only supports .NET Standard 2.0-->
         <BenchmarkTargetFrameworks>netcoreapp2.1</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>netcoreapp1.1</SamplesFrameworks>
       </PropertyGroup>
     </When>
     <When Condition=" '$(ProjectLoadStyle)' == 'DevCore21' ">
@@ -56,6 +71,16 @@
         <TestTargetFrameworks>netcoreapp2.1</TestTargetFrameworks>
         <AssetsTargetFrameworks>netstandard1.3</AssetsTargetFrameworks>
         <BenchmarkTargetFrameworks>netcoreapp2.1</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>netcoreapp2.1</SamplesFrameworks>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(ProjectLoadStyle)' == 'DevCore31' ">
+      <PropertyGroup>
+        <ProductTargetFrameworks>netstandard2.0</ProductTargetFrameworks>
+        <TestTargetFrameworks>netcoreapp3.1</TestTargetFrameworks>
+        <AssetsTargetFrameworks>netstandard1.3</AssetsTargetFrameworks>
+        <BenchmarkTargetFrameworks>netcoreapp3.1</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>netcoreapp3.1</SamplesFrameworks>
       </PropertyGroup>
     </When>
     <When Condition=" '$(ProjectLoadStyle)' == 'All' ">
@@ -66,21 +91,36 @@
         -->
         <ProductTargetFrameworks>netstandard1.3;netstandard2.0;net35;net40;net46</ProductTargetFrameworks>
         <AssetsTargetFrameworks>net452;netstandard1.3</AssetsTargetFrameworks>
-        <TestTargetFrameworks>net452;net46;netcoreapp1.1;netcoreapp2.1</TestTargetFrameworks>
-        <BenchmarkTargetFrameworks>net461;netcoreapp2.1</BenchmarkTargetFrameworks>
+        <TestTargetFrameworks>net452;net46;netcoreapp1.1;netcoreapp2.1;netcoreapp3.1</TestTargetFrameworks>
+        <BenchmarkTargetFrameworks>net461;netcoreapp2.1;netcoreapp3.1</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>net46;netcoreapp2.1;netcoreapp3.1</SamplesFrameworks>
 
         <!-- Must disable this due to https://github.com/NuGet/Home/issues/7414 so .NET Core 1.x will build -->
         <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
       </PropertyGroup>
     </When>
+    <Otherwise>
+      <PropertyGroup>
+        <ProductTargetFrameworks>netstandard2.0</ProductTargetFrameworks>
+        <TestTargetFrameworks>netcoreapp3.1</TestTargetFrameworks>
+        <AssetsTargetFrameworks>netstandard1.3</AssetsTargetFrameworks>
+        <BenchmarkTargetFrameworks>netcoreapp3.1</BenchmarkTargetFrameworks>
+        <SamplesFrameworks>netcoreapp3.1</SamplesFrameworks>
+        <__InvalidProjectLoadStyle>true</__InvalidProjectLoadStyle>
+      </PropertyGroup>
+    </Otherwise>
   </Choose>
+
+  <Target Name="UnknownProjectLoadStyle" BeforeTargets="Build" Condition="$(__InvalidProjectLoadStyle)">
+    <Warning Text="Unknown ProjectLoadStyle '$(ProjectLoadStyle)' set. Please verify settings in Directory.Build.props and environment variables to a known value. For now, default values will be used." />
+  </Target>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)\rules.ruleset</CodeAnalysisRuleSet>
 
     <!-- Signing -->

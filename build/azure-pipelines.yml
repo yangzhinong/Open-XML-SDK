@@ -31,6 +31,8 @@ stages:
             name: net461
           - tfm: netcoreapp2.1
             name: netcoreapp2_1
+          - tfm: netcoreapp3.1
+            name: netcoreapp3_1
     dependsOn: Build
     condition: succeeded()
 
@@ -45,8 +47,11 @@ stages:
             name: net46
           - tfm: netcoreapp1.1
             name: netcoreapp1_1
+            runtime: '1.1.14'
           - tfm: netcoreapp2.1
             name: netcoreapp2_1
+          - tfm: netcoreapp3.1
+            name: netcoreapp3_1
     dependsOn: Build
     condition: succeeded()
 
@@ -60,3 +65,41 @@ stages:
         - template: sign.yml
     dependsOn: Build
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  
+  - stage: MyGet
+    jobs:
+      - deployment: OpenXmlMyGet
+        displayName: Deploy to MyGet
+        pool:
+          name: Hosted Windows 2019 with VS2019
+        environment: 'openxmlsdk-dotnet-myget'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: nuget.yml
+                  parameters:
+                    feed: 'OpenXML MyGet Feed'
+    dependsOn: 
+      - Sign
+      - PerformanceTests
+      - UnitTests
+    condition: succeeded()
+
+  - stage: NuGet
+    jobs:
+      - deployment: OpenXmlNuGet
+        displayName: Deploy to NuGet
+        pool:
+          name: Hosted Windows 2019 with VS2019
+        environment: 'openxmlsdk-dotnet-nuget'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: nuget.yml
+                  parameters:
+                    feed: 'OpenXML NuGet Feed'
+    dependsOn: 
+      - MyGet
+    condition: and(succeeded(), variables['ReleaseNuGet'], eq(variables['Build.SourceBranchName'], 'master'))

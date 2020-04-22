@@ -1,13 +1,3 @@
----
-page_type: sample
-products:
-- office-365
-languages:
-- csharp
-extensions:
-  contentType: sdks
-  createdDate: 6/5/2014 9:11:17 AM
----
 Open XML SDK
 ============
 
@@ -70,12 +60,13 @@ WindowsBase or System.IO.Packaging
 
 There is a known issue in `WindowsBase` that causes crashes when handling large data sources. This is fixed in later versions of the library, based on the platform availability of the `System.IO.Packaging` package. When possible, we use this package instead of `WindowsBase`. This not only fixes the crash seen by some users, but is available cross platform. However, it is only available on .NET Standard 1.3+ and .NET Framework 4.6+. For this reason, the NuGet package has multiple targets to bring in, when possible. The targets are determined by NuGet at installation and build time and are listed in the table below.
 
-| Platform      | System.IO.Packing Source | Tested by     |
-| --------      | ------------------------ | ------------- |
-| .NET 3.5      | WindowsBase              | N/A           |
-| .NET 4.0      | WindowsBase              | .NET 4.5.2    |
-| .NET 4.6      | NuGet                    | .NET 4.6      |
-| .NET Standard | NuGet                    | .NET Core 1.0 |
+| Platform          | System.IO.Packing Source | Tested by                    |
+| ----------------- | ------------------------ | ---------------------------- |
+| .NET 3.5          | WindowsBase              | N/A                          |
+| .NET 4.0          | WindowsBase              | .NET 4.5.2                   |
+| .NET 4.6          | NuGet                    | .NET 4.6                     |
+| .NET Standard 1.3 | NuGet                    | .NET Core 1.1                |
+| .NET Standard 2.0 | NuGet                    | .NET Core 2.1, .NET Core 3.1 |
 
 Keep in mind, though, that the `System.IO.Packaging` on .NET 4.6+ is simply a facade over WindowsBase, and thus everything running on .NET 4.6 will use WindowsBase instead of the newer implementation.
 
@@ -141,7 +132,9 @@ Build Instructions
 
 This project uses the csproj format and the release versions of the tooling in Visual Studio 2017. For more information on how to use this project type to build your project, see the [release notes for Visual Studio 2017]( https://www.visualstudio.com/en-us/news/releasenotes/vs2017-relnotes#dotnetcore). Other editors that support the latest .NET project files include Visual Studio Code, Visual Studio for Mac, or .NET CLI. See [.NET Downloads](https://www.microsoft.com/net/download/core) for details.
 
-The project often requires the latest release of the C# compiler as many new features come on-line that greatly aid in ease of development. As of now, the C# 7.2 compiler is required (which was released in December 2017) and comes standard in Visual Studio 2017 Update 5, with other IDEs providing updates to the compiler, as well.
+The project often requires the latest release of the C# compiler as many new features come on-line that greatly aid in ease of development. As of now, the C# 7.3 compiler is required and comes standard in Visual Studio 2017 Update 7, with other IDEs providing updates to the compiler, as well.
+
+Since there are a number of targets for the project, and loading all at once may cause slow performance in Visual Studio, the target framework can be controlled by an environment variable. This is controlled in [Directory.Build.props](./Directory.Build.props) via the environment variable `ProjectLoadStyle`. This changes over time, but that file will contain what the available load configurations are. By default, this will try to default to the current LTS version of .NET Core, but allows development against previous targets if needed. This is helpful, for instance, if you don't have the latest .NET installed.  The continuous integration system sets `ProjectLoadStyle=All` to build for all targets.
 
 To build the Open XML SDK
 -------------------------

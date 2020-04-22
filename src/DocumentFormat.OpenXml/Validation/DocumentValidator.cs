@@ -7,7 +7,6 @@ using DocumentFormat.OpenXml.Validation.Semantic;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 
 namespace DocumentFormat.OpenXml.Validation
@@ -18,42 +17,44 @@ namespace DocumentFormat.OpenXml.Validation
     internal sealed class DocumentValidator
     {
         private readonly SchemaValidator _schemaValidator;
+        private readonly ValidationCache _cache;
         private readonly SemanticValidator _semanticValidator;
-        private readonly ValidationSettings _validationSettings;
 
         /// <summary>
         /// Initializes a new instance of the DocumentValidator.
         /// </summary>
-        /// <param name="settings">The validation settings.</param>
         /// <param name="schemaValidator">The schema validator to be used for schema validation.</param>
         /// <param name="semanticValidator">The semantic validator to be used for semantic validation.</param>
-        public DocumentValidator(ValidationSettings settings, SchemaValidator schemaValidator, SemanticValidator semanticValidator)
+        /// <param name="cache">The shared validation cache.</param>
+        public DocumentValidator(SchemaValidator schemaValidator, SemanticValidator semanticValidator, ValidationCache cache)
         {
+            _cache = cache;
             _schemaValidator = schemaValidator;
             _semanticValidator = semanticValidator;
-            _validationSettings = settings;
         }
 
         /// <summary>
         /// Validate the specified document.
         /// </summary>
         /// <param name="document">The document to be validated.</param>
+        /// <param name="settings">The settings to be used during validation.</param>
         /// <returns>Return results in ValidationResult.</returns>
-        public List<ValidationErrorInfo> Validate(OpenXmlPackage document)
+        public List<ValidationErrorInfo> Validate(OpenXmlPackage document, ValidationSettings settings)
         {
-            var context = CreateValidationContext();
+            var context = new ValidationContext(settings, _cache);
 
-            context.Package = document;
-
-            // integrate the package validation.
-            ValidatePackageStructure(document, context);
-
-            foreach (var part in PartsToBeValidated(document))
+            using (context.Stack.Push(document))
             {
-                // traverse from the part root element (by DOM or by Reader) in post-order
-                // that means validate the children first, then validate the parent
-                // the validation engine call bookkeep information
-                ValidatePart(part, context);
+                // integrate the package validation.
+                ValidatePackageStructure(document, context);
+
+                foreach (var part in PartsToBeValidated(document))
+                {
+                    // traverse from the part root element (by DOM or by Reader) in post-order
+                    // that means validate the children first, then validate the parent
+                    // the validation engine call bookkeep information
+                    ValidatePart(part, context);
+                }
             }
 
             return context.Errors;
@@ -63,10 +64,11 @@ namespace DocumentFormat.OpenXml.Validation
         /// Validate the specified part.
         /// </summary>
         /// <param name="part">The OpenXmlPart to be validated.</param>
+        /// <param name="settings">The settings to be used during validation.</param>
         /// <returns></returns>
-        public List<ValidationErrorInfo> Validate(OpenXmlPart part)
+        public List<ValidationErrorInfo> Validate(OpenXmlPart part, ValidationSettings settings)
         {
-            var context = CreateValidationContext();
+            var context = new ValidationContext(settings, _cache);
 
             ValidatePart(part, context);
 
@@ -76,7 +78,7 @@ namespace DocumentFormat.OpenXml.Validation
         private void ValidatePart(OpenXmlPart part, ValidationContext context)
         {
             // if the part is not defined in the specified version, then do not validate the content.
-            if (!part.IsInVersion(_validationSettings.FileFormat))
+            if (!part.IsInVersion(_cache.Version))
             {
                 return;
             }
@@ -91,25 +93,28 @@ namespace DocumentFormat.OpenXml.Validation
                 // Must be called before the call to PartRootElement { get; }
                 bool partRootElementLoaded = part.IsRootElementLoaded;
 
-                // schema validation
-                context.Part = part;
-                context.Element = part.PartRootElement;
-
-                var lastErrorCount = context.Errors.Count;
-
-                if (part.PartRootElement != null)
+                // Schema validation
+                using (context.Stack.Push(part: part, element: part.PartRootElement))
                 {
-                    _schemaValidator.Validate(context);
+                    var lastErrorCount = context.Errors.Count;
 
-                    context.Element = part.PartRootElement;
-                    context.Events.OnPartValidationStarted(context);
-                    _semanticValidator.Validate(context);
-                }
+                    if (part.PartRootElement != null)
+                    {
+                        _schemaValidator.Validate(context);
 
-                if (!partRootElementLoaded && context.Errors.Count == lastErrorCount)
-                {
-                    // No new errors in this part. Release the DOM to GC memory.
-                    part.SetPartRootElementToNull();
+                        // TODO: Is this needed? It's set 8 lines up
+                        using (context.Stack.Push(element: part.PartRootElement))
+                        {
+                            context.Events.OnPartValidationStarted(context);
+                            _semanticValidator.Validate(context);
+                        }
+                    }
+
+                    if (!partRootElementLoaded && context.Errors.Count == lastErrorCount)
+                    {
+                        // No new errors in this part. Release the DOM to GC memory.
+                        part.SetPartRootElementToNull();
+                    }
                 }
             }
             catch (System.Xml.XmlException e)
@@ -119,45 +124,10 @@ namespace DocumentFormat.OpenXml.Validation
                     ErrorType = ValidationErrorType.Schema,
                     Id = "ExceptionError",
                     Part = part,
-                    Path = new XmlPath(part),
                     Description = SR.Format(ValidationResources.ExceptionError, e.Message),
                 };
 
                 context.AddError(errorInfo);
-            }
-        }
-
-        private ValidationContext CreateValidationContext()
-        {
-            return new ValidationContext
-            {
-                FileFormat = _validationSettings.FileFormat,
-                MaxNumberOfErrors = _validationSettings.MaxNumberOfErrors,
-            };
-        }
-
-        private static OpenXmlPart GetMainPart(OpenXmlPackage package)
-        {
-            if (null == package)
-            {
-                throw new ArgumentNullException(nameof(package));
-            }
-
-            if (package is WordprocessingDocument word)
-            {
-                return word.MainDocumentPart;
-            }
-            else if (package is SpreadsheetDocument spreadsheet)
-            {
-                return spreadsheet.WorkbookPart;
-            }
-            else if (package is PresentationDocument presentation)
-            {
-                return presentation.PresentationPart;
-            }
-            else
-            {
-                throw new System.IO.InvalidDataException(ExceptionMessages.UnknownPackage);
             }
         }
 
@@ -166,7 +136,7 @@ namespace DocumentFormat.OpenXml.Validation
         /// </summary>
         private IEnumerable<OpenXmlPart> PartsToBeValidated(OpenXmlPackage package)
         {
-            var mainPart = GetMainPart(package);
+            var mainPart = package.RootPart;
             if (mainPart != null)
             {
                 var parts = new Dictionary<OpenXmlPart, bool>();
@@ -176,7 +146,7 @@ namespace DocumentFormat.OpenXml.Validation
                 {
                     // Only validate the parts defined in the specified version.
                     // Example: do not validate new Office2010 parts if the FileFormat is Office2007.
-                    if (part.IsInVersion(_validationSettings.FileFormat))
+                    if (part.IsInVersion(_cache.Version))
                     {
                         yield return part;
                     }
@@ -240,7 +210,6 @@ namespace DocumentFormat.OpenXml.Validation
                     if (e.Part != null)
                     {
                         errorInfo.Part = e.Part;
-                        errorInfo.Path = new XmlPath(e.Part);
                     }
 
                     errorInfo.RelatedPart = e.SubPart;
